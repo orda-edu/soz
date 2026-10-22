@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Сөз іздеу - SözÖrnegi.kz</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header id="nav"></header>
+
+<div class="container py-5">
+  <div class="row justify-content-center"><div class="col-lg-10">
+
+    <div class="text-center mb-5">
+      <h1 class="fw-bold mb-3" style="color:#1e3a8a">ЖАЗУШЫЛАР МӘТІНІНЕН ІЗДЕУ</h1>
+      <p class="text-muted">Сөзді енгізіңіз, қажет сүзгілерді (бірнешеуін) таңдап, «Іздеу» батырмасын басыңыз</p>
+    </div>
+
+    <div class="search-wrapper" id="search">
+      <div class="dropdown">
+        <button class="btn btn-link mode-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" id="modeBtn">Сөз бойынша</button>
+        <ul class="dropdown-menu">
+          <li><a class="dropdown-item mode-item" href="#" data-mode="word">Сөз бойынша</a></li>
+          <li><a class="dropdown-item mode-item" href="#" data-mode="meaning">Мағынасы бойынша</a></li>
+        </ul>
+      </div>
+      <input type="text" class="search-input" id="searchInput" placeholder="Іздеу..">
+      <button class="btn-clear" id="clearBtn" title="Тазалау"><i class="bi bi-x-lg"></i></button>
+      <button class="btn-search" id="searchBtn"><i class="bi bi-search me-2"></i>Іздеу</button>
+    </div>
+
+    <div class="chips" id="chips"></div>
+    <div id="results" class="mb-5"></div>
+
+    <div class="panel p-4 p-md-5" id="filters">
+      <h5 class="mb-4 fw-semibold text-center" style="color:#1e3a8a">Сүзгілер арқылы іздеу <span class="text-muted fs-6 fw-normal">(бірнешеуін таңдауға болады)</span></h5>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="dropdown h-100">
+            <button class="filter-card" data-bs-toggle="dropdown" data-bs-auto-close="outside" type="button">
+              <span class="filter-title"><i class="bi bi-person me-2"></i>Авторлар<span class="count-badge d-none" id="authorCount"></span></span>
+              <i class="bi bi-chevron-down opacity-50"></i>
+            </button>
+            <ul class="dropdown-menu filter-menu" id="authorsList"><li class="px-3 py-2 text-muted">Жүктелуде...</li></ul>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="dropdown h-100">
+            <button class="filter-card" data-bs-toggle="dropdown" data-bs-auto-close="outside" type="button">
+              <span class="filter-title"><i class="bi bi-book me-2"></i>Шығармалар<span class="count-badge d-none" id="workCount"></span></span>
+              <i class="bi bi-chevron-down opacity-50"></i>
+            </button>
+            <ul class="dropdown-menu filter-menu" id="worksList"><li class="px-3 py-2 text-muted">Жүктелуде...</li></ul>
+          </div>
+        </div>
+      </div>
+      <div class="row g-3 mt-1" id="typeFilters"></div>
+      <div class="text-center mt-4"><button class="btn btn-outline-primary rounded-pill px-4 d-none" id="resetFilters"><i class="bi bi-arrow-counterclockwise me-1"></i>Сүзгілерді тазалау</button></div>
+    </div>
+
+  </div></div>
+</div>
+
+<div class="modal fade" id="infoModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:15px">
+      <div class="modal-header border-0 pb-0"><h5 class="modal-title fw-bold" id="infoModalTitle">Ақпарат</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Жабу"></button></div>
+      <div class="modal-body text-center py-4">
+        <i class="bi bi-info-circle display-1 text-primary mb-3"></i>
+        <h4 id="infoModalName" class="fw-bold mb-3">...</h4>
+        <p id="infoModalDesc" class="text-muted" style="white-space:pre-line"></p>
+      </div>
+      <div class="modal-footer border-0 justify-content-center pt-0"><button type="button" class="btn btn-secondary px-5 rounded-pill" data-bs-dismiss="modal">Жабу</button></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="nav.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
