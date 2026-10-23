@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>try{if(localStorage.getItem('theme')==='dark')document.documentElement.setAttribute('data-bs-theme','dark')}catch(e){}</script>
+<title>Ойындар - SözÖrnegi.kz</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  .game-card{transition:.25s;border:1px solid #e5e7eb;border-radius:16px}
+  .game-card:hover{transform:translateY(-6px);box-shadow:0 14px 34px rgba(30,58,138,.15)}
+  .opt{display:block;width:100%;text-align:left;background:#fff;border:2px solid #e2e8f0;border-radius:12px;padding:14px 18px;margin-bottom:10px;transition:.15s}
+  .opt:hover:not(:disabled){border-color:#3b82f6;background:#eff6ff}
+  .opt.ok{background:#d1fae5;border-color:#10b981}.opt.bad{background:#fee2e2;border-color:#ef4444}
+  .mitem{background:#fff;border:2px solid #e2e8f0;border-radius:12px;padding:12px 16px;margin-bottom:10px;cursor:pointer;transition:.15s;width:100%;text-align:left}
+  .mitem:hover{border-color:#3b82f6}.mitem.sel{border-color:#2563eb;background:#dbeafe}
+  .mitem.done{background:#d1fae5;border-color:#10b981;cursor:default}.mitem.bad{background:#fee2e2;border-color:#ef4444}
+</style>
+</head>
+<body>
+<header id="nav"></header>
+<div class="container py-5"><div class="row justify-content-center"><div class="col-lg-9" id="app"></div></div></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="nav.js"></script>
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+const sb = createClient('https://jkvjtjjimqvppvogotiu.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imprdmp0amppbXF2cHB2b2dvdGl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI2ODYzNzAsImV4cCI6MjEwODI2MjM3MH0.Zk-CdKAilLWVjwW8RmvmqRBfOFv9MyrJQxDGDud0qbs');
+const app = document.getElementById('app');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const title = (t, c) => `<h2 class="text-center fw-bold mb-4" style="color:${c || '#1e3a8a'}">${t}</h2>`;
+let cache = null, Q = null, M = null, student = null;
+try { student = JSON.parse(localStorage.getItem('student') || 'null'); } catch (e) {}
+const sbar = () => student
+  ? `<div class="panel p-3 mb-4 mx-auto d-flex justify-content-between align-items-center flex-wrap gap-2" style="max-width:640px"><span><i class="bi bi-person-check-fill text-success me-2"></i>Оқушы: <b>${esc(student.name)}</b> — нәтижелер мұғалімге сақталады</span><button class="btn btn-sm btn-outline-secondary rounded-pill" data-act="slogout">Шығу</button></div>`
+  : `<div class="panel p-3 mb-4 mx-auto" style="max-width:640px"><div class="fw-bold mb-2"><i class="bi bi-key-fill me-2 text-primary"></i>Оқушы коды (мұғалім береді)</div><div class="d-flex gap-2 flex-wrap"><input id="sCode" class="form-control code-in" style="max-width:240px" placeholder="Мысалы: K7M2QX" autocomplete="off"><button class="btn btn-primary rounded-pill px-4" data-act="slogin">Кіру</button></div><div id="sErr" class="small text-danger mt-1"></div><div class="small text-muted mt-1">Кодсыз да ойнауға болады, бірақ нәтиже сақталмайды.</div></div>`;
+async function slogin() {
+  const code = document.getElementById('sCode').value.trim().toUpperCase();
+  if (!code) return;
+  const { data, error } = await sb.rpc('student_login', { p_code: code });
+  if (error || !data || !data.length) { document.getElementById('sErr').textContent = 'Код табылмады. Мұғалімнен сұраңыз.'; return; }
+  student = { code, name: data[0].full_name };
+  try { localStorage.setItem('student', JSON.stringify(student)); } catch (e) {}
+  home();
+}
+function slogout() { student = null; try { localStorage.removeItem('student'); } catch (e) {} home(); }
+async function saveResult(game, score, total) {
+  if (!student) return;
+  const { error } = await sb.rpc('save_result', { p_code: student.code, p_game: game, p_score: score, p_total: total });
+  const n = document.getElementById('saveNote');
+  if (n) n.textContent = error ? 'Нәтиже сақталмады: ' + error.message : '✅ Нәтиже мұғалімге сақталды';
+}
+
+async function getWords() {
+  if (!cache) {
+    const { data, error } = await sb.from('words').select('id,word,meaning,work,author');
+    if (error) throw error;
+    cache = (data || []).filter(w => w.word && w.meaning);
+  }
+  return cache;
+}
+const note = m => `<div class="panel p-5 text-center"><i class="bi bi-info-circle display-4 text-primary"></i><p class="mt-3 mb-4">${m}</p><button class="btn btn-primary rounded-pill px-4" data-act="home">Ойындар тізімі</button></div>`;
+
+// ---------- Басты ----------
+function home() {
+  const card = (ic, col, t, d, act) => `<div class="col-md-4"><div class="game-card panel h-100 text-center p-4">
+    <i class="bi ${ic} text-${col}" style="font-size:4rem"></i><h4 class="fw-bold mt-3">${t}</h4>
+    <p class="text-muted my-3">${d}</p><button class="btn btn-outline-${col} w-100 rounded-pill fw-bold" data-act="${act}">ОЙНАУ <i class="bi bi-play-fill"></i></button></div></div>`;
+  app.parentElement.parentElement.className = 'row justify-content-center';
+  app.innerHTML = `<div class="pt-2"></div>` + title('Ойындарды таңдаңыз') + sbar() + `<div class="row g-4">
+    ${card('bi-question-circle-fill', 'primary', 'Тест: Мағынаны тап', 'Сөз беріледі, оның дұрыс мағынасын нұсқалардан табыңыз.', 'quizSetup')}
+    ${card('bi-puzzle-fill', 'success', 'Сәйкестендіру', 'Сөздер мен мағыналарды бір-бірімен сәйкестендіріңіз.', 'matchSetup')}
+    ${card('bi-images', 'warning', 'Суретті тап', 'Суретке қарап, жасырылған атауды табыңыз.', 'picture')}</div>`;
+}
+
+// ---------- Тест ----------
+async function quizSetup() {
+  app.innerHTML = '<div class="text-center text-muted">Жүктелуде...</div>';
+  let ws; try { ws = await getWords(); } catch (e) { app.innerHTML = note('Қате: ' + esc(e.message)); return; }
+  const works = [...new Set(ws.map(w => w.work).filter(Boolean))];
+  app.innerHTML = title('Тест параметрлері') + `<div class="panel p-4 p-md-5" style="max-width:560px;margin:auto">
+    <label class="form-label fw-bold">Шығарма:</label>
+    <select id="qWork" class="form-select form-select-lg mb-4"><option value="">📚 Барлық шығармалар</option>${works.map(w => `<option>${esc(w)}</option>`).join('')}</select>
+    <label class="form-label fw-bold">Сұрақ саны:</label>
+    <select id="qCount" class="form-select form-select-lg mb-4"><option>5</option><option selected>10</option><option>15</option><option>20</option></select>
+    <button class="btn btn-primary btn-lg w-100 fw-bold" data-act="quizStart">ТЕСТТІ БАСТАУ</button>
+    <button class="btn btn-outline-secondary w-100 mt-2" data-act="home">Артқа</button></div>`;
+}
+function quizStart() {
+  const work = document.getElementById('qWork').value, n = +document.getElementById('qCount').value;
+  const pool = cache.filter(w => !work || w.work === work);
+  if (pool.length < 2) { app.innerHTML = note('Тест үшін кемінде 2 сөз қажет. Басқа шығарманы таңдаңыз.'); return; }
+  Q = { i: 0, items: shuffle(pool).slice(0, n).map(w => {
+    const others = shuffle([...new Set(cache.map(x => x.meaning))].filter(m => m !== w.meaning)).slice(0, 3);
+    return { q: w.word, correct: w.meaning, options: shuffle([w.meaning, ...others]), user: null };
+  }) };
+  quizQ();
+}
+function quizQ() {
+  const it = Q.items[Q.i], pct = Q.i / Q.items.length * 100;
+  app.innerHTML = `<div class="progress mb-4" style="height:8px"><div class="progress-bar" style="width:${pct}%"></div></div>
+    <div class="panel p-4 p-md-5"><div class="text-muted mb-2">Сұрақ ${Q.i + 1}/${Q.items.length}</div>
+    <h4 class="mb-4"><b>"${esc(it.q)}"</b> сөзінің мағынасы қайсы?</h4>
+    ${it.options.map((o, k) => `<button class="opt" data-act="pick" data-k="${k}">${esc(o)}</button>`).join('')}</div>`;
+}
+function quizPick(k) {
+  const it = Q.items[Q.i]; it.user = it.options[k];
+  document.querySelectorAll('.opt').forEach((b, j) => {
+    b.disabled = true;
+    if (it.options[j] === it.correct) b.classList.add('ok'); else if (j === k) b.classList.add('bad');
+  });
+  setTimeout(() => { Q.i++; Q.i < Q.items.length ? quizQ() : quizResult(); }, 900);
+}
+function quizResult() {
+  const ok = Q.items.filter(i => i.user === i.correct).length, t = Q.items.length, good = ok >= t / 2;
+  saveResult('Тест', ok, t);
+  app.innerHTML = `<div class="page-hero p-5 text-center mb-4" style="background:${good ? 'linear-gradient(135deg,#198754,#20c997)' : 'linear-gradient(135deg,#dc3545,#ff6b6b)'}">
+    <h3 class="fw-bold">${ok === t ? '🏆 Керемет! Барлығы дұрыс!' : good ? '👏 Жақсы нәтиже!' : '😔 Келесі жолы сәттілік!'}</h3>
+    <div class="display-3 fw-bold">${ok} <span class="fs-4">/ ${t}</span></div></div>
+    <h5 class="fw-bold mb-3">Жауаптарды талдау</h5>
+    ${Q.items.map((i, n) => `<div class="panel p-3 mb-2"><div class="fw-bold">#${n + 1} ${esc(i.q)}</div>
+      ${i.user === i.correct ? `<span class="badge bg-success mt-2 text-wrap text-start">✓ ${esc(i.user)}</span>`
+      : `<span class="badge bg-danger mt-2 text-wrap text-start">✗ Сіз: ${esc(i.user)}</span><br><span class="badge bg-success mt-1 text-wrap text-start">✓ Дұрысы: ${esc(i.correct)}</span>`}</div>`).join('')}
+    <div class="text-center small text-muted mt-3" id="saveNote"></div><div class="text-center mt-3"><button class="btn btn-primary rounded-pill px-4 me-2" data-act="quizSetup">Қайта тапсыру</button>
+    <button class="btn btn-outline-secondary rounded-pill px-4" data-act="home">Ойындар тізімі</button></div>`;
+}
+
+// ---------- Сәйкестендіру ----------
+async function matchSetup() {
+  app.innerHTML = '<div class="text-center text-muted">Жүктелуде...</div>';
+  try { await getWords(); } catch (e) { app.innerHTML = note('Қате: ' + esc(e.message)); return; }
+  app.innerHTML = title('Сәйкестендіру ойыны', '#198754') + `<div class="panel p-4 p-md-5" style="max-width:480px;margin:auto">
+    <label class="form-label fw-bold">Жұп саны:</label>
+    <select id="mCount" class="form-select form-select-lg mb-4"><option>5</option><option>8</option><option>10</option></select>
+    <button class="btn btn-success btn-lg w-100 fw-bold" data-act="matchStart">Бастау</button>
+    <button class="btn btn-outline-secondary w-100 mt-2" data-act="home">Артқа</button></div>`;
+}
+function matchStart() {
+  const n = +document.getElementById('mCount').value;
+  const seen = new Set(), uniq = cache.filter(w => !seen.has(w.meaning) && seen.add(w.meaning));
+  if (uniq.length < 2) { app.innerHTML = note('Ойын үшін кемінде 2 сөз қажет.'); return; }
+  const pool = shuffle(uniq).slice(0, n).map((w, id) => ({ id, word: w.word, meaning: w.meaning }));
+  M = { pool, left: shuffle(pool), right: shuffle(pool), w: null, m: null, found: 0, miss: 0, t0: Date.now(), lock: false };
+  matchDraw();
+}
+function matchDraw() {
+  const col = (list, side) => list.map(p => `<button class="mitem" data-act="msel" data-side="${side}" data-id="${p.id}">${esc(side === 'w' ? p.word : p.meaning)}</button>`).join('');
+  app.innerHTML = title('Сөзді мағынасымен сәйкестендіріңіз', '#198754') + `<div class="row"><div class="col-5 col-md-5"><h6 class="text-center text-success">СӨЗДЕР</h6>${col(M.left, 'w')}</div>
+    <div class="col-7 col-md-7"><h6 class="text-center text-success">МАҒЫНАЛАР</h6>${col(M.right, 'm')}</div></div>
+    <h5 class="text-center fw-bold mt-3" id="mStat">Табылды: 0/${M.pool.length}</h5>`;
+}
+function matchSel(btn) {
+  if (M.lock || btn.classList.contains('done')) return;
+  const side = btn.dataset.side;
+  document.querySelectorAll(`.mitem.sel[data-side="${side}"]`).forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel'); M[side] = btn;
+  if (!M.w || !M.m) return;
+  const a = M.w, b = M.m;
+  if (a.dataset.id === b.dataset.id) {
+    [a, b].forEach(x => { x.classList.remove('sel'); x.classList.add('done'); });
+    M.found++; document.getElementById('mStat').textContent = `Дұрыс! ✅ ${M.found}/${M.pool.length}`;
+    M.w = M.m = null;
+    if (M.found === M.pool.length) setTimeout(matchResult, 600);
+  } else {
+    M.miss++; M.lock = true; [a, b].forEach(x => x.classList.add('bad'));
+    document.getElementById('mStat').textContent = 'Қате! ❌';
+    setTimeout(() => { [a, b].forEach(x => x.classList.remove('bad', 'sel')); M.w = M.m = null; M.lock = false; }, 800);
+  }
+}
+function matchResult() {
+  const sec = Math.round((Date.now() - M.t0) / 1000), n = M.pool.length;
+  saveResult('Сәйкестендіру', Math.max(0, n - M.miss), n);
+  app.innerHTML = `<div class="page-hero p-5 text-center mb-4" style="background:linear-gradient(135deg,#198754,#20c997)">
+    <h3 class="fw-bold">${M.miss === 0 ? '🏆 КЕРЕМЕТ! Қатесіз!' : 'Ойын аяқталды!'}</h3>
+    <div class="display-4 fw-bold">${n}/${n}</div><p class="mb-0">Қате әрекет: ${M.miss} · Уақыт: ${sec} сек</p></div>
+    <h5 class="fw-bold mb-3">Дұрыс жауаптар</h5>
+    ${M.pool.map(p => `<div class="panel p-3 mb-2"><b>${esc(p.word)}</b> — <span class="text-muted">${esc(p.meaning)}</span></div>`).join('')}
+    <div class="text-center small text-muted mt-3" id="saveNote"></div><div class="text-center mt-3"><button class="btn btn-success rounded-pill px-4 me-2" data-act="matchSetup">Қайта ойнау</button>
+    <button class="btn btn-outline-secondary rounded-pill px-4" data-act="home">Ойындар тізімі</button></div>`;
+}
+
+// ---------- Суретті тап ----------
+async function picture() {
+  app.innerHTML = '<div class="text-center text-muted">Жүктелуде...</div>';
+  const { data, error } = await sb.from('pictures').select('*');
+  if (error || !data || !data.length) {
+    app.innerHTML = note('Суретті тап ойынына әзірге суреттер қосылмаған. Суреттер базаға қосылған соң ойын осы жерде шығады.'); return;
+  }
+  window.__pics = data;
+  app.innerHTML = title('Суретті тап', '#b45309') + data.map((p, i) => `<div class="panel p-4 mb-4 text-center">
+    <img src="${esc(p.image_url)}" class="img-fluid rounded mb-3" style="max-height:300px" alt="">
+    <h5>Бұл не?</h5><input class="form-control w-75 mx-auto mt-2" id="pa${i}" placeholder="Жауапты жазыңыз...">
+    <button class="btn btn-warning text-white mt-3" data-act="pcheck" data-i="${i}">Тексеру</button>
+    <p class="mt-2 fw-bold mb-0" id="pr${i}"></p></div>`).join('') +
+    '<div class="text-center"><button class="btn btn-outline-secondary rounded-pill px-4" data-act="home">Ойындар тізімі</button></div>';
+}
+function pcheck(i) {
+  const c = window.__pics[i].correct_answer || '', v = document.getElementById('pa' + i).value.trim().toLowerCase(), r = document.getElementById('pr' + i);
+  const ok = v === c.trim().toLowerCase();
+  r.textContent = ok ? 'Дұрыс! ✅' : 'Қате! Дұрыс жауап: ' + c; r.className = 'mt-2 fw-bold mb-0 text-' + (ok ? 'success' : 'danger');
+}
+
+// ---------- Басқару ----------
+const acts = { slogin, slogout, home, quizSetup, quizStart, matchSetup, matchStart, picture };
+app.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const a = b.dataset.act;
+  if (a === 'pick') quizPick(+b.dataset.k);
+  else if (a === 'msel') matchSel(b);
+  else if (a === 'pcheck') pcheck(+b.dataset.i);
+  else acts[a]();
+});
+app.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'sCode') slogin(); });
+home();
+</script>
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>try{if(localStorage.getItem('theme')==='dark')document.documentElement.setAttribute('data-bs-theme','dark')}catch(e){}</script>
+<title>Мұғалімдерге - SözÖrnegi.kz</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header id="nav"></header>
+
+<div class="container py-5" id="root">
+
+  <div id="authBox" class="d-none" style="max-width:440px;margin:auto">
+    <div class="panel p-4 p-md-5">
+      <div class="text-center mb-3"><i class="bi bi-person-workspace display-4 text-primary"></i><h4 class="fw-bold mt-2">Мұғалімдер кабинеті</h4></div>
+      <div class="btn-group w-100 mb-4"><button class="btn btn-primary" id="tabIn">Кіру</button><button class="btn btn-outline-primary" id="tabUp">Тіркелу</button></div>
+      <form id="authForm">
+        <input id="aName" class="form-control mb-3 d-none" placeholder="Аты-жөніңіз">
+        <input id="aMail" type="email" class="form-control mb-3" placeholder="Email" required>
+        <input id="aPass" type="password" class="form-control mb-3" placeholder="Құпиясөз (кемінде 6 таңба)" minlength="6" required>
+        <div id="aMsg" class="small mb-3"></div>
+        <button class="btn btn-primary w-100 rounded-pill fw-bold" id="aBtn">Кіру</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="dash" class="d-none">
+    <div class="page-hero p-4 mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div><h3 class="fw-bold mb-0">Сәлем, <span id="tName"></span>!</h3><div class="opacity-75 small">Оқушыларды қосып, олардың ойын нәтижелерін қараңыз</div></div>
+      <div class="d-flex gap-2 flex-wrap"><a href="kmzh.html" class="btn btn-outline-light rounded-pill px-4"><i class="bi bi-journal-text me-1"></i>ҚМЖ</a><button class="btn btn-light rounded-pill px-4" id="logout"><i class="bi bi-box-arrow-right me-1"></i>Шығу</button></div>
+    </div>
+
+    <div class="panel p-4 mb-4">
+      <h5 class="fw-bold mb-3"><i class="bi bi-person-plus-fill text-primary me-2"></i>Оқушы қосу</h5>
+      <form id="stForm" class="row g-2">
+        <div class="col-md-6"><input id="sName" class="form-control" placeholder="Оқушының аты-жөні" required></div>
+        <div class="col-md-3"><input id="sClass" class="form-control" placeholder="Сынып (мыс: 10А)"></div>
+        <div class="col-md-3"><button class="btn btn-primary w-100 rounded-pill fw-bold">Қосу</button></div>
+      </form>
+      <div id="stMsg" class="small mt-2"></div>
+    </div>
+
+    <div class="panel p-4 mb-4">
+      <h5 class="fw-bold mb-3"><i class="bi bi-people-fill text-primary me-2"></i>Менің оқушыларым</h5>
+      <div class="table-responsive"><table class="table align-middle mb-0">
+        <thead><tr><th>Аты-жөні</th><th>Сынып</th><th>Коды</th><th>Ойын саны</th><th>Орташа</th><th></th></tr></thead>
+        <tbody id="stRows"></tbody></table></div>
+      <div class="small text-muted mt-2">Оқушы кодты «Ойындар» бетінде енгізіп, нәтижесін сақтайды.</div>
+    </div>
+
+    <div class="panel p-4">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <h5 class="fw-bold mb-0"><i class="bi bi-bar-chart-fill text-primary me-2"></i>Ойын нәтижелері</h5>
+        <div class="d-flex gap-2 flex-wrap"><select id="fSt" class="form-select form-select-sm"><option value="">Барлық оқушы</option></select>
+        <select id="fGame" class="form-select form-select-sm"><option value="">Барлық ойын</option><option>Тест</option><option>Сәйкестендіру</option></select></div>
+      </div>
+      <div class="table-responsive"><table class="table align-middle mb-0">
+        <thead><tr><th>Оқушы</th><th>Ойын</th><th>Нәтиже</th><th>%</th><th>Күні</th></tr></thead>
+        <tbody id="rRows"></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="nav.js"></script>
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+const sb = createClient('https://jkvjtjjimqvppvogotiu.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imprdmp0amppbXF2cHB2b2dvdGl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI2ODYzNzAsImV4cCI6MjEwODI2MjM3MH0.Zk-CdKAilLWVjwW8RmvmqRBfOFv9MyrJQxDGDud0qbs');
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let mode = 'in', students = [], results = [];
+
+// ---------- Кіру / тіркелу ----------
+function setMode(m) {
+  mode = m;
+  $('tabIn').className = 'btn ' + (m === 'in' ? 'btn-primary' : 'btn-outline-primary');
+  $('tabUp').className = 'btn ' + (m === 'up' ? 'btn-primary' : 'btn-outline-primary');
+  $('aName').classList.toggle('d-none', m === 'in'); $('aName').required = m === 'up';
+  $('aBtn').textContent = m === 'in' ? 'Кіру' : 'Тіркелу'; $('aMsg').textContent = '';
+}
+$('tabIn').onclick = () => setMode('in'); $('tabUp').onclick = () => setMode('up');
+$('authForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const email = $('aMail').value.trim(), password = $('aPass').value, msg = $('aMsg');
+  msg.className = 'small mb-3 text-primary'; msg.textContent = 'Күте тұрыңыз...';
+  if (mode === 'in') {
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) { msg.className = 'small mb-3 text-danger'; msg.textContent = 'Email немесе құпиясөз қате. ' + (error.message.includes('confirm') ? 'Поштаңызды растаңыз.' : ''); }
+  } else {
+    const { data, error } = await sb.auth.signUp({ email, password, options: { data: { full_name: $('aName').value.trim() } } });
+    if (error) { msg.className = 'small mb-3 text-danger'; msg.textContent = error.message; return; }
+    if (!data.session) { msg.className = 'small mb-3 text-success'; msg.textContent = '✅ Тіркелдіңіз! Поштаңызға келген сілтемені басып, email растаңыз да, «Кіру» арқылы кіріңіз.'; }
+  }
+});
+$('logout').onclick = () => sb.auth.signOut();
+
+sb.auth.onAuthStateChange((_e, session) => show(session?.user));
+sb.auth.getSession().then(({ data }) => show(data.session?.user));
+
+async function show(user) {
+  if (window.renderNav) window.renderNav();
+  if (user && new URLSearchParams(location.search).get('from') === 'kmzh') { location.replace('kmzh.html'); return; }
+  $('authBox').classList.toggle('d-none', !!user);
+  $('dash').classList.toggle('d-none', !user);
+  if (!user) return;
+  $('tName').textContent = user.user_metadata?.full_name || user.email;
+  await load();
+}
+
+// ---------- Деректер ----------
+async function load() {
+  const [s, r] = await Promise.all([
+    sb.from('students').select('*').order('created_at', { ascending: false }),
+    sb.from('game_results').select('*, students(full_name, class_name)').order('created_at', { ascending: false })
+  ]);
+  if (s.error) { $('stMsg').className = 'small mt-2 text-danger'; $('stMsg').textContent = 'Қате: ' + s.error.message + ' (SQL орнатылғанын тексеріңіз)'; return; }
+  students = s.data || []; results = r.data || [];
+  const cur = $('fSt').value;
+  $('fSt').innerHTML = '<option value="">Барлық оқушы</option>' + students.map(x => `<option value="${x.id}">${esc(x.full_name)}</option>`).join('');
+  $('fSt').value = cur;
+  drawStudents(); drawResults();
+}
+function drawStudents() {
+  $('stRows').innerHTML = students.length ? students.map(s => {
+    const rs = results.filter(r => r.student_id === s.id);
+    const tot = rs.reduce((a, r) => a + r.total, 0), sc = rs.reduce((a, r) => a + r.score, 0);
+    return `<tr><td class="fw-semibold">${esc(s.full_name)}</td><td>${esc(s.class_name)}</td>
+      <td><code class="fs-6 bg-light px-2 py-1 rounded">${esc(s.code)}</code></td><td>${rs.length}</td>
+      <td>${tot ? Math.round(sc / tot * 100) + '%' : '—'}</td>
+      <td><button class="btn btn-sm btn-outline-danger rounded-pill" data-del="${s.id}">Өшіру</button></td></tr>`;
+  }).join('') : '<tr><td colspan="6" class="text-muted text-center py-4">Әзірге оқушы жоқ. Жоғарыдан қосыңыз.</td></tr>';
+}
+function drawResults() {
+  const st = $('fSt').value, g = $('fGame').value;
+  const list = results.filter(r => (!st || r.student_id === st) && (!g || r.game === g));
+  $('rRows').innerHTML = list.length ? list.map(r => {
+    const p = r.total ? Math.round(r.score / r.total * 100) : 0;
+    const col = p >= 80 ? 'success' : p >= 50 ? 'warning' : 'danger';
+    return `<tr><td class="fw-semibold">${esc(r.students?.full_name)} <span class="text-muted small">${esc(r.students?.class_name)}</span></td><td>${esc(r.game)}</td>
+      <td>${r.score}/${r.total}</td><td><span class="badge bg-${col}">${p}%</span></td>
+      <td class="small text-muted">${new Date(r.created_at).toLocaleString('kk-KZ')}</td></tr>`;
+  }).join('') : '<tr><td colspan="5" class="text-muted text-center py-4">Нәтиже жоқ.</td></tr>';
+}
+$('fSt').onchange = $('fGame').onchange = drawResults;
+
+// ---------- Оқушы қосу / өшіру ----------
+const gen = () => Array.from({ length: 6 }, () => 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 31)]).join('');
+$('stForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const full_name = $('sName').value.trim(), class_name = $('sClass').value.trim(), msg = $('stMsg');
+  let res;
+  for (let i = 0; i < 3; i++) {
+    res = await sb.from('students').insert([{ full_name, class_name, code: gen() }]);
+    if (!res.error || res.error.code !== '23505') break; // код қайталанса, қайта әрекет
+  }
+  if (res.error) { msg.className = 'small mt-2 text-danger'; msg.textContent = 'Қате: ' + res.error.message; return; }
+  msg.className = 'small mt-2 text-success'; msg.textContent = '✅ Оқушы қосылды. Кодын төмендегі кестеден алыңыз.';
+  $('sName').value = ''; $('sClass').value = '';
+  load();
+});
+$('stRows').addEventListener('click', async e => {
+  const b = e.target.closest('[data-del]'); if (!b) return;
+  if (!confirm('Оқушы мен оның барлық нәтижесі өшіріледі. Растайсыз ба?')) return;
+  const { error } = await sb.from('students').delete().eq('id', b.dataset.del);
+  if (error) alert('Қате: ' + error.message); else load();
+});
+</script>
+</body>
+</html>
