@@ -38,3 +38,137 @@ body{background:#f4f7fb;color:#1f2937;font-family:'Inter',sans-serif;min-height:
 .nav-login:hover{color:#fff;transform:translateY(-1px);box-shadow:0 6px 16px rgba(37,99,235,.45)}
 .nav-login.active{border-color:#93c5fd}
 .code-in:not(:placeholder-shown){text-transform:uppercase;letter-spacing:2px;font-weight:700}
+
+.info-table{width:100%;border-collapse:collapse;font-size:15px}
+.info-table td{border:1px solid #1e3a8a33;padding:12px 16px;vertical-align:top;white-space:pre-line;line-height:1.55}
+.info-table td:first-child{width:32%;font-weight:700;background:#eef2ff;color:#1e3a8a}
+.info-table tr:first-child td{border-top:0}.info-table td:first-child{border-left:0}.info-table td:last-child{border-right:0}
+
+/* ================= Құрылым: футер әрдайым төменде, навигация қатып тұрады ================= */
+body{display:flex;flex-direction:column}
+body>.container{flex:1 0 auto;width:100%}
+#nav{position:sticky;top:0;z-index:1050}
+#nav .site-nav{position:static}
+.table{--bs-table-bg:transparent}
+
+/* ================= Түнгі режим батырмасы ================= */
+.theme-toggle{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;border:1px solid #cbd5e1;background:transparent;color:#1e3a8a;font-size:17px;padding:0;transition:.2s}
+.theme-toggle:hover{background:#eef2ff}
+
+/* ================= Футер ================= */
+.site-footer{margin-top:auto;background:linear-gradient(135deg,#1e3a8a,#172554);color:#cbd5e1;padding:36px 0 18px;font-size:14px}
+.site-footer .f-brand{color:#fff;font-weight:800;font-size:20px;text-decoration:none}
+.site-footer h6{color:#fff;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px}
+.site-footer a{color:#cbd5e1;text-decoration:none}
+.site-footer a:hover{color:#fff;text-decoration:underline}
+.site-footer ul{list-style:none;padding:0;margin:0}
+.site-footer li{margin-bottom:6px}
+.site-footer .f-bottom{border-top:1px solid rgba(255,255,255,.15);margin-top:24px;padding-top:14px;text-align:center;font-size:13px;opacity:.85}
+
+/* ================= Түнгі режим ================= */
+[data-bs-theme=dark]{--bs-body-bg:#0b1220;--bs-body-color:#e5e7eb;--bs-border-color:#26324a}
+[data-bs-theme=dark] body{background:#0b1220;color:#e5e7eb}
+[data-bs-theme=dark] .site-nav{background:#0f172a;border-bottom-color:#1e293b;box-shadow:0 2px 10px rgba(0,0,0,.4)}
+[data-bs-theme=dark] .site-nav .brand{color:#93b4ff}
+[data-bs-theme=dark] .site-nav .nav-link{color:#cbd5e1}
+[data-bs-theme=dark] .site-nav .nav-link:hover{background:#1e293b;color:#fff}
+[data-bs-theme=dark] .site-nav .nav-link.active{background:#2563eb;color:#fff}
+[data-bs-theme=dark] .site-nav .navbar-collapse{border-top-color:#1e293b}
+[data-bs-theme=dark] .navbar-toggler i{color:#93b4ff!important}
+[data-bs-theme=dark] .theme-toggle{border-color:#334155;color:#fbbf24}
+[data-bs-theme=dark] .theme-toggle:hover{background:#1e293b}
+[data-bs-theme=dark] .panel{background:#131c2e;border-color:#26324a;box-shadow:0 4px 20px rgba(0,0,0,.35)}
+[data-bs-theme=dark] .search-wrapper{background:#131c2e;border-color:#334155;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+[data-bs-theme=dark] .search-wrapper:focus-within{border-color:#3b82f6;box-shadow:0 0 0 4px rgba(59,130,246,.25)}
+[data-bs-theme=dark] .mode-btn{color:#93b4ff!important;border-right-color:#334155!important}
+[data-bs-theme=dark] .search-input{color:#e5e7eb}
+[data-bs-theme=dark] .search-input::placeholder{color:#64748b}
+[data-bs-theme=dark] .btn-search{background:#2563eb}
+[data-bs-theme=dark] .btn-search:hover{background:#3b82f6}
+[data-bs-theme=dark] .btn-clear:hover{color:#93b4ff}
+[data-bs-theme=dark] .chip{background:#1e2a4a;border-color:#334a85;color:#bcd0ff}
+[data-bs-theme=dark] .chip button{color:#bcd0ff}
+[data-bs-theme=dark] .filter-card{background:#18233a;border-color:#26324a;color:#e5e7eb}
+[data-bs-theme=dark] .filter-card:hover{background:#1e2c4a;border-color:#334a85}
+[data-bs-theme=dark] .type-card.active{background:color-mix(in srgb,var(--c) 28%,#131c2e)}
+[data-bs-theme=dark] .count-badge{background:#2563eb}
+[data-bs-theme=dark] .dropdown-menu.filter-menu{background:#131c2e;border-color:#26324a;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+[data-bs-theme=dark] .filter-menu .item{color:#e5e7eb}
+[data-bs-theme=dark] .filter-menu .item:hover{background:#1e2c4a}
+[data-bs-theme=dark] .filter-menu .info-btn{color:#93b4ff}
+[data-bs-theme=dark] .info-table td{border-color:#334a85}
+[data-bs-theme=dark] .info-table td:first-child{background:#1a2744;color:#bcd0ff}
+[data-bs-theme=dark] .bg-white,[data-bs-theme=dark] .bg-light{background-color:#18233a!important}
+[data-bs-theme=dark] :not(.badge).text-dark{color:#e5e7eb!important}
+[data-bs-theme=dark] .text-primary{color:#7ba6ff!important}
+[data-bs-theme=dark] [style*="color:#1e3a8a"]{color:#93b4ff!important}
+[data-bs-theme=dark] [style*="color:#b45309"]{color:#fbbf24!important}
+[data-bs-theme=dark] .modal-content{background:#131c2e}
+[data-bs-theme=dark] .game-card{border-color:#26324a}
+[data-bs-theme=dark] .opt,[data-bs-theme=dark] .mitem{background:#131c2e;border-color:#2b3956;color:#e5e7eb}
+[data-bs-theme=dark] .opt:hover:not(:disabled),[data-bs-theme=dark] .mitem:hover{background:#1b2740;border-color:#3b82f6}
+[data-bs-theme=dark] .mitem.sel{background:#1b2c52;border-color:#3b82f6}
+[data-bs-theme=dark] .opt.ok,[data-bs-theme=dark] .mitem.done{background:#12372b;border-color:#10b981}
+[data-bs-theme=dark] .opt.bad,[data-bs-theme=dark] .mitem.bad{background:#3d1a1f;border-color:#ef4444}
+[data-bs-theme=dark] .site-footer{background:#0a1020;border-top:1px solid #1e293b}
+
+/* ================= Мобильді бейімдеу ================= */
+@media(max-width:991.98px){
+  .site-nav .navbar-collapse{margin-top:10px;padding-top:10px;border-top:1px solid #e5e7eb}
+  .site-nav .nav-link{display:block;margin:2px 0}
+  .nav-login{display:flex;justify-content:center;width:100%}
+}
+@media(max-width:767.98px){
+  .container.py-5{padding-top:1.5rem!important;padding-bottom:1.5rem!important}
+  h1.fw-bold{font-size:1.35rem}
+  .page-hero{border-radius:16px}
+  .page-hero.p-5{padding:1.75rem 1rem!important}
+  .page-hero h1,.page-hero h1.display-5{font-size:1.6rem}
+  .page-hero h2.h4{font-size:1rem}
+  .panel.p-4{padding:1.1rem!important}
+  .search-input{padding:12px 14px}
+  .filter-card{padding:12px 14px}
+  .info-table{font-size:14px}
+  .info-table td{padding:9px 10px}
+  .info-table td:first-child{width:38%}
+  .mitem{padding:9px 10px;font-size:13px}
+  .opt{padding:12px 14px}
+  .site-footer{padding-top:28px;text-align:center}
+}
+
+/* ================= Сүзгі панелі (жиырылатын) ================= */
+.filters-toggle{background:none;border:0;width:100%;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px 10px;color:#1e3a8a;font-weight:600;font-size:1.25rem;padding:0;text-align:center}
+.filters-toggle .count-badge{margin-left:0}
+.toggle-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;background:#1e3a8a;color:#fff;font-size:13px;font-weight:700;box-shadow:0 3px 10px rgba(30,58,138,.3);transition:.2s}
+.filters-toggle:hover .toggle-chip{background:#2563eb;transform:translateY(-1px)}
+.toggle-chip .bi{font-size:13px;transition:transform .25s}
+.filters-toggle[aria-expanded=true] .toggle-chip .bi{transform:rotate(180deg)}
+.filters-toggle[aria-expanded=true] .tc-closed,.filters-toggle[aria-expanded=false] .tc-open{display:none}
+#filters{transition:padding .3s}
+#filters.is-collapsed{padding:1rem 1.25rem!important}
+[data-bs-theme=dark] .filters-toggle{color:#93b4ff}
+
+/* ================= Күн авторы / Күн сөзі ================= */
+.daily-card{overflow:hidden}
+.daily-head{display:flex;align-items:center;gap:8px;font-weight:800;font-size:13px;letter-spacing:.6px;text-transform:uppercase;color:#fff;padding:11px 18px;background:linear-gradient(135deg,#1e3a8a,#3b82f6)}
+.daily-card.word .daily-head{background:linear-gradient(135deg,#b45309,#f59e0b)}
+.daily-body{padding:18px}
+.daily-photo,.daily-avatar{width:84px;height:84px;border-radius:50%;margin:0 auto 12px;display:block}
+.daily-photo{object-fit:cover;border:3px solid #dbeafe;box-shadow:0 4px 14px rgba(30,58,138,.2)}
+.daily-avatar{display:flex;align-items:center;justify-content:center;background:#eef2ff;color:#3b82f6;font-size:2.6rem}
+.daily-word{font-weight:800;font-size:1.35rem;color:#1d4ed8;word-break:break-word}
+.daily-link{color:inherit;text-decoration:none;border-bottom:1px solid #93c5fd}
+.daily-link:hover{color:#1d4ed8}
+@media(min-width:992px){.daily-aside{position:sticky;top:90px}}
+[data-bs-theme=dark] .daily-photo{border-color:#26324a}
+[data-bs-theme=dark] .daily-avatar{background:#1a2744;color:#7ba6ff}
+[data-bs-theme=dark] .daily-word{color:#7ba6ff}
+[data-bs-theme=dark] .daily-link{border-bottom-color:#334a85}
+[data-bs-theme=dark] .daily-link:hover{color:#93b4ff}
+
+/* ================= Түнгі режим: нәтиже карточкаларын бөлу, түймелер ================= */
+[data-bs-theme=dark] #results .card{--bs-card-bg:#131c2e;background:#131c2e;border:1px solid #26324a!important;border-left:4px solid #3b82f6!important;box-shadow:0 4px 18px rgba(0,0,0,.35)!important;margin-bottom:1.25rem!important}
+[data-bs-theme=dark] #results .bg-light{background-color:#18233a!important;border-color:#2b3956!important}
+[data-bs-theme=dark] .toggle-chip{background:#2563eb;box-shadow:0 3px 10px rgba(0,0,0,.4)}
+[data-bs-theme=dark] .filters-toggle:hover .toggle-chip{background:#3b82f6}
+[data-bs-theme=dark] .btn-outline-primary{--bs-btn-color:#93b4ff;--bs-btn-border-color:#3b5bb5;--bs-btn-hover-bg:#2563eb;--bs-btn-hover-border-color:#2563eb;--bs-btn-hover-color:#fff;--bs-btn-active-bg:#2563eb;--bs-btn-active-border-color:#2563eb;--bs-btn-active-color:#fff}

@@ -9,8 +9,9 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 const TYPE_COLORS = {
-  'Эпитет':'#0d6efd','Метафора':'#198754','Теңеу':'#ffc107','Тұрақты тіркес':'#dc3545','Авторлық сөзқолданыс':'#0dcaf0',
-  'Мақал-мәтел':'#6c757d','Көне сөздер':'#6f42c1','Діни сөз':'#d63384','Кірме сөздер':'#fd7e14','Этномәдени атаулар':'#20c997'
+  'Жер-су атаулары':'#0f766e','Кейіпкерлер':'#8b5cf6','Авторлық сөзқолданыс':'#0dcaf0','Эпитет':'#0d6efd',
+  'Метафора':'#198754','Теңеу':'#ffc107','Тұрақты тіркес':'#dc3545','Мақал-мәтелдер':'#6c757d',
+  'Көне сөз':'#6f42c1','Діни сөз':'#d63384','Кірме сөз':'#fd7e14','Этномәдени атаулар':'#20c997'
 };
 
 const state = { mode: 'word', types: new Set(), authors: new Set(), works: new Set() };
@@ -24,16 +25,27 @@ function badges(str) {
   }).join('');
 }
 
-// ---------- Ақпарат модалы ----------
+// ---------- Ақпарат модалы (Word-тағыдай кесте) ----------
+const AUTHOR_ROWS = [['name', 'Шығарманың авторы'], ['gender', 'Автордың жынысы'], ['info', 'Жазушының өмірдерегі'], ['main_works', 'Жазушының негізгі еңбектері']];
+const WORK_ROWS = [['title', 'Шығарманың аты'], ['author_name', 'Шығарманың авторы'], ['topic', 'Шығарманың тақырыбы'], ['annotation', 'Шығарманың қысқаша аңдатпасы'],
+  ['genre', 'Шығарма жанры'], ['genre_type', 'Шығарманың жанрлық түрі'], ['style', 'Шығарма стилі'], ['chronotope', 'Шығарма хронотопы']];
+
 async function showInfo(type, name) {
+  const isAuthor = type === 'Автор';
   $('infoModalTitle').textContent = `${type} туралы`;
-  $('infoModalName').textContent = name;
-  $('infoModalDesc').innerHTML = '<span class="spinner-border spinner-border-sm text-primary"></span> Жүктелуде...';
+  $('infoModalBody').innerHTML = '<div class="p-4 text-center"><span class="spinner-border spinner-border-sm text-primary"></span> Жүктелуде...</div>';
   bootstrap.Modal.getOrCreateInstance($('infoModal')).show();
-  const table = type === 'Автор' ? 'authors' : 'works';
-  const col = type === 'Автор' ? 'name' : 'title';
-  const { data } = await sb.from(table).select('info').eq(col, name).limit(1);
-  $('infoModalDesc').textContent = data?.[0]?.info || 'Бұл туралы толық ақпарат әзірге енгізілмеген.';
+
+  const { data } = await sb.from(isAuthor ? 'authors' : 'works').select('*').eq(isAuthor ? 'name' : 'title', name).limit(1);
+  const r = data?.[0];
+  let rows = (isAuthor ? AUTHOR_ROWS : WORK_ROWS).map(([k, label]) => [label, r?.[k]]);
+  // жаңа бағандар толмаған ескі жазбалар үшін: бұрынғы "info" мәтіні
+  if (!isAuthor && !rows.slice(2).some(x => x[1]) && r?.info) rows.push(['Шығарма туралы', r.info]);
+  rows = rows.filter(([, v]) => v && String(v).trim());
+  if (!rows.length) rows = [[isAuthor ? 'Шығарманың авторы' : 'Шығарманың аты', name], ['Ақпарат', 'Бұл туралы толық ақпарат әзірге енгізілмеген.']];
+  else if (!rows.some(x => x[1] === name)) rows.unshift([isAuthor ? 'Шығарманың авторы' : 'Шығарманың аты', name]);
+  const photo = isAuthor && r?.photo_url ? `<div class="text-center p-3 bg-light"><img src="${esc(r.photo_url)}" alt="${esc(name)}" style="max-height:260px;max-width:100%;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,.15)"></div>` : '';
+  $('infoModalBody').innerHTML = photo + `<table class="info-table"><tbody>${rows.map(([l, v]) => `<tr><td>${esc(l)}</td><td>${esc(v)}</td></tr>`).join('')}</tbody></table>`;
 }
 
 // ---------- Сүзгі карточкалары (типтер) ----------
@@ -99,11 +111,16 @@ $('worksList').addEventListener('change', e => {
   refresh();
 });
 
+// сүзгі панелі жиырылғанда ықшам көрінеді
+$('filtersBody').addEventListener('hide.bs.collapse', () => $('filters').classList.add('is-collapsed'));
+$('filtersBody').addEventListener('show.bs.collapse', () => $('filters').classList.remove('is-collapsed'));
+
 // ---------- Таңдалған сүзгілер (чиптер) ----------
 function refresh() {
   const set = (id, n) => { $(id).textContent = n; $(id).classList.toggle('d-none', !n); };
   set('authorCount', state.authors.size);
   set('workCount', state.works.size);
+  set('filtersCount', state.types.size + state.authors.size + state.works.size);
   $('resetFilters').classList.toggle('d-none', !(state.types.size || state.authors.size || state.works.size));
 
   const chip = (kind, v, icon) => `<span class="chip"><i class="bi ${icon} me-1"></i>${esc(v)}<button type="button" data-kind="${kind}" data-v="${esc(v)}">✕</button></span>`;
@@ -153,6 +170,8 @@ async function search() {
     $('results').innerHTML = '<div class="alert alert-warning">Сөзді енгізіңіз немесе кемінде бір сүзгіні таңдаңыз.</div>';
     return;
   }
+  // сүзгі таңдалып іздегенде, "Сүзгілер арқылы іздеу" панелі жиырылады (тақырыбын басып қайта ашуға болады)
+  if (hasFilters) bootstrap.Collapse.getOrCreateInstance($('filtersBody'), { toggle: false }).hide();
   $('results').innerHTML = '<div class="text-center mt-3"><span class="spinner-border spinner-border-sm"></span> Ізделуде...</div>';
 
   let query = sb.from('words').select('*').order('created_at', { ascending: false });
@@ -172,6 +191,7 @@ async function search() {
         <div>${badges(i.word_type)}</div>
       </div>
       <div class="bg-light p-3 rounded mb-3 border"><span class="fst-italic">${esc(i.meaning)}</span></div>
+      ${i.example ? `<div class="mb-3 ps-3 text-secondary" style="border-left:3px solid #93c5fd"><i class="bi bi-quote me-1"></i>${esc(i.example)}</div>` : ''}
       <div class="text-secondary">
         <strong>Автор:</strong> <a href="#" class="info-link text-decoration-none border-bottom border-primary" data-title="Автор" data-name="${esc(i.author)}">${esc(i.author)}</a><br>
         <strong>Шығарма:</strong> <a href="#" class="info-link text-decoration-none border-bottom border-success" data-title="Шығарма" data-name="${esc(i.work)}">${esc(i.work)}</a>
@@ -186,4 +206,60 @@ $('results').addEventListener('click', e => {
   showInfo(a.dataset.title, a.dataset.name);
 });
 
+// ---------- Күн авторы / Күн сөзі ----------
+// Күн сайын (жергілікті күн бойынша) бір автор мен бір сөз ауысып тұрады: барлық пайдаланушыға бірдей.
+const dayIndex = () => { const d = new Date(); return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000); };
+const cut = (s, n) => { s = String(s ?? '').trim(); return s.length > n ? s.slice(0, n).replace(/\s+\S*$/, '') + '…' : s; };
+const dHead = (icon, t) => `<div class="daily-head"><i class="bi ${icon}"></i>${t}</div>`;
+
+async function loadDailyAuthor() {
+  const box = $('dailyAuthor'), head = dHead('bi-person-badge-fill', 'Күн авторы');
+  try {
+    const { data, error } = await sb.from('authors').select('name, info, photo_url').order('name');
+    if (error) throw error;
+    if (!data?.length) { box.innerHTML = head + '<div class="daily-body text-center text-muted small">Авторлар әзірге қосылмаған.</div>'; return; }
+    const a = data[dayIndex() % data.length];
+    box.innerHTML = head + `<div class="daily-body text-center">
+      ${a.photo_url ? `<img class="daily-photo" src="${esc(a.photo_url)}" alt="${esc(a.name)}">` : '<div class="daily-avatar"><i class="bi bi-person-fill"></i></div>'}
+      <div class="fw-bold mb-2">${esc(a.name)}</div>
+      ${a.info ? `<p class="small text-muted text-start">${esc(cut(a.info, 120))}</p>` : ''}
+      <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" data-info-title="Автор" data-info-name="${esc(a.name)}">Толығырақ</button></div>`;
+  } catch (e) {
+    box.innerHTML = head + '<div class="daily-body text-center text-danger small">Жүктелмеді.</div>';
+  }
+}
+
+async function loadDailyWord() {
+  const box = $('dailyWord'), head = dHead('bi-lightbulb-fill', 'Күн сөзі');
+  try {
+    const c = await sb.from('words').select('id', { count: 'exact', head: true });
+    if (c.error) throw c.error;
+    if (!c.count) { box.innerHTML = head + '<div class="daily-body text-center text-muted small">Сөздер әзірге қосылмаған.</div>'; return; }
+    const { data, error } = await sb.from('words').select('*').order('id').range(dayIndex() % c.count, dayIndex() % c.count);
+    if (error) throw error;
+    const w = data?.[0];
+    if (!w) throw new Error('empty');
+    box.innerHTML = head + `<div class="daily-body">
+      <div class="daily-word mb-2">${esc(w.word)}</div>
+      <div class="mb-2">${badges(w.word_type)}</div>
+      <p class="small fst-italic mb-2">${esc(cut(w.meaning, 160))}</p>
+      ${w.example ? `<p class="small text-secondary ps-2 mb-2" style="border-left:3px solid #93c5fd">${esc(cut(w.example, 130))}</p>` : ''}
+      <div class="small text-secondary">
+        <a href="#" class="daily-link" data-info-title="Автор" data-info-name="${esc(w.author)}">${esc(w.author)}</a><br>
+        <a href="#" class="daily-link" data-info-title="Шығарма" data-info-name="${esc(w.work)}">${esc(w.work)}</a>
+      </div></div>`;
+  } catch (e) {
+    box.innerHTML = head + '<div class="daily-body text-center text-danger small">Жүктелмеді.</div>';
+  }
+}
+
+$('daily').addEventListener('click', e => {
+  const a = e.target.closest('[data-info-name]');
+  if (!a) return;
+  e.preventDefault();
+  showInfo(a.dataset.infoTitle, a.dataset.infoName);
+});
+
+loadDailyAuthor();
+loadDailyWord();
 loadFilterLists();

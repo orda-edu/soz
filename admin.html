@@ -28,7 +28,10 @@
   .main h1::after{content:"";position:absolute;left:0;bottom:0;width:64px;height:5px;border-radius:5px;background:var(--blue)}
   .btn-red{background:linear-gradient(135deg,#d93a40,var(--red));color:#fff;border:0;border-radius:30px;padding:13px 34px;font-weight:700;font-size:17px;box-shadow:0 6px 16px rgba(193,39,45,.35);transition:.2s}
   .btn-red:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(193,39,45,.45)}
-  .tbl{background:#fff;border:1px solid #dbe5f0;border-radius:26px;padding:18px;margin-top:26px;box-shadow:0 10px 30px rgba(15,23,42,.07)}
+  .fbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:22px;background:#fff;border:1px solid #dbe5f0;border-radius:20px;padding:12px 16px;box-shadow:0 4px 14px rgba(15,23,42,.05)}
+  .fbar .fsel{width:auto;min-width:170px;max-width:240px;border-radius:20px}
+  .fbar .form-control-sm{border-radius:20px}
+  .tbl{background:#fff;border:1px solid #dbe5f0;border-radius:26px;padding:18px;margin-top:16px;box-shadow:0 10px 30px rgba(15,23,42,.07)}
   .th-row,.tr-row{display:flex;gap:20px}
   .pill{background:linear-gradient(135deg,var(--blue),#2f8fd8);color:#fff;border-radius:30px;padding:9px 26px;font-weight:700;font-size:18px}
   .c1{flex:0 0 38%}.c2{flex:1;min-width:0}
@@ -40,6 +43,8 @@
   .thumb{max-width:100%;max-height:120px;border-radius:12px;border:1px solid #cbd5e1;box-shadow:0 3px 10px rgba(0,0,0,.1)}
   .del{border:1px solid #fecaca;background:#fef2f2;color:var(--red);font-size:13px;font-weight:600;padding:3px 14px;border-radius:20px;margin-top:10px;transition:.2s}
   .del:hover{background:var(--red);color:#fff}
+  .act{border:1px solid #bfdbfe;background:#eff6ff;color:var(--blue);font-size:13px;font-weight:600;padding:3px 14px;border-radius:20px;margin:10px 6px 0 0;transition:.2s;display:inline-block;text-decoration:none}
+  .act:hover{background:var(--blue);color:#fff}
   .login-wrap{min-height:calc(100% - 76px);display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,#e0f0fb,#f1f5f9)}
   .login-card{background:#fff;border-radius:24px;padding:40px 36px;width:100%;max-width:420px;box-shadow:0 20px 50px rgba(0,114,188,.18)}
   .login-card .ic{width:68px;height:68px;margin:0 auto 14px;border-radius:50%;background:linear-gradient(135deg,var(--blue),#2f8fd8);color:#fff;display:flex;align-items:center;justify-content:center;font-size:30px}
@@ -77,6 +82,8 @@
       <a href="#" data-view="works"><i class="bi bi-book-fill"></i>Шығармалар</a>
       <a href="#" data-view="words"><i class="bi bi-chat-quote-fill"></i>Сөздер</a>
       <a href="#" data-view="pictures"><i class="bi bi-images"></i>Суреттер</a>
+      <a href="#" data-view="kmzh"><i class="bi bi-journal-text"></i>ҚМЖ</a>
+      <a href="#" data-view="videos"><i class="bi bi-play-circle-fill"></i>Бейнесабақтар</a>
     </nav>
   </aside>
   <section class="main">
@@ -84,6 +91,7 @@
       <h1 id="pageTitle">АВТОРЛАР</h1>
       <button class="btn-red" id="btnAdd">Автор енгізу</button>
     </div>
+    <div class="fbar" id="filterBar"></div>
     <div class="tbl">
       <div class="th-row"><div class="pill c1" id="h1">Аты-жөні:</div><div class="pill c2" id="h2">Автор туралы</div></div>
       <div id="rows"><div class="p-4 text-muted">Жүктелуде...</div></div>
