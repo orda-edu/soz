@@ -9,13 +9,14 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{--blue:#0072bc;--blue-d:#1e3a8a;--red:#c1272d;--ink:#0f172a;--side:#1e293b}
-  html,body{height:100%;margin:0;font-family:'Inter',sans-serif;color:var(--ink);background:#f1f5f9}
-  .topbar{background:linear-gradient(90deg,#005a99,var(--blue) 55%,#2f8fd8);height:76px;display:flex;align-items:center;padding:0 32px;color:#fff;font-weight:800;font-size:24px;letter-spacing:.3px;box-shadow:0 4px 18px rgba(0,114,188,.35);position:relative;z-index:5}
+  html{height:100%}
+  body{min-height:100%;margin:0;font-family:'Inter',sans-serif;color:var(--ink);background:#f1f5f9}
+  .topbar{background:linear-gradient(90deg,#005a99,var(--blue) 55%,#2f8fd8);height:76px;display:flex;align-items:center;padding:0 32px;color:#fff;font-weight:800;font-size:24px;letter-spacing:.3px;box-shadow:0 4px 18px rgba(0,114,188,.35);position:sticky;top:0;z-index:20}
   .topbar small{font-weight:500;opacity:.8;font-size:13px;margin-left:14px;padding:3px 12px;border:1px solid rgba(255,255,255,.4);border-radius:20px}
   .topbar a{color:#fff;text-decoration:none;margin-left:auto;font-size:14px;font-weight:600;background:rgba(255,255,255,.15);padding:8px 18px;border-radius:20px;transition:.2s}
   .topbar a:hover{background:rgba(255,255,255,.28)}
-  .layout{display:flex;min-height:calc(100% - 76px)}
-  .side{width:290px;background:linear-gradient(180deg,#1e293b,#0f172a);padding:30px 26px;flex-shrink:0}
+  .layout{display:flex;min-height:calc(100vh - 76px)}
+  .side{width:290px;background:linear-gradient(180deg,#1e293b,#0f172a);padding:30px 26px;flex-shrink:0;position:sticky;top:76px;align-self:flex-start;height:calc(100vh - 76px);overflow-y:auto}
   .btn-new{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;background:#fff;color:var(--blue);border:0;border-radius:30px;padding:13px;font-weight:700;font-size:17px;box-shadow:0 6px 16px rgba(0,0,0,.25);transition:.2s}
   .btn-new:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(0,0,0,.35)}
   .nav-s{margin-top:44px}
@@ -45,7 +46,7 @@
   .del:hover{background:var(--red);color:#fff}
   .act{border:1px solid #bfdbfe;background:#eff6ff;color:var(--blue);font-size:13px;font-weight:600;padding:3px 14px;border-radius:20px;margin:10px 6px 0 0;transition:.2s;display:inline-block;text-decoration:none}
   .act:hover{background:var(--blue);color:#fff}
-  .login-wrap{min-height:calc(100% - 76px);display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,#e0f0fb,#f1f5f9)}
+  .login-wrap{min-height:calc(100vh - 76px);display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,#e0f0fb,#f1f5f9)}
   .login-card{background:#fff;border-radius:24px;padding:40px 36px;width:100%;max-width:420px;box-shadow:0 20px 50px rgba(0,114,188,.18)}
   .login-card .ic{width:68px;height:68px;margin:0 auto 14px;border-radius:50%;background:linear-gradient(135deg,var(--blue),#2f8fd8);color:#fff;display:flex;align-items:center;justify-content:center;font-size:30px}
   .form-control,.form-select{border-radius:12px;padding:11px 14px;border-color:#cbd5e1}
@@ -55,7 +56,7 @@
   .modal-header{padding:24px 28px 8px}.modal-body{padding:12px 28px}.modal-footer{padding:8px 28px 24px}
   .modal-title{font-weight:800;color:var(--blue-d)}
   .btn-primary{background:var(--blue);border-color:var(--blue)}
-  @media(max-width:800px){.layout{flex-direction:column}.side{width:100%;padding:18px}.nav-s{margin-top:18px;display:flex;flex-wrap:wrap;gap:6px}.nav-s a{margin:0;font-size:15px;padding:8px 14px}.main{padding:20px}.main h1{font-size:28px}.tr-row,.th-row{gap:10px}.c1{flex-basis:42%}.pill{font-size:14px;padding:7px 14px}.tr-row .c1{font-size:16px;padding-left:6px}.topbar{padding:0 16px;font-size:20px}.topbar small{display:none}}
+  @media(max-width:800px){.layout{flex-direction:column}.side{width:100%;padding:18px;position:static;height:auto;overflow:visible}.nav-s{margin-top:18px;display:flex;flex-wrap:wrap;gap:6px}.nav-s a{margin:0;font-size:15px;padding:8px 14px}.main{padding:20px}.main h1{font-size:28px}.tr-row,.th-row{gap:10px}.c1{flex-basis:42%}.pill{font-size:14px;padding:7px 14px}.tr-row .c1{font-size:16px;padding-left:6px}.topbar{padding:0 16px;font-size:20px}.topbar small{display:none}}
 </style>
 </head>
 <body>
