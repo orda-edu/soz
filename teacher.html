@@ -98,7 +98,7 @@ $('authForm').addEventListener('submit', async e => {
     const { error } = await sb.auth.signInWithPassword({ email, password });
     if (error) { msg.className = 'small mb-3 text-danger'; msg.textContent = 'Email немесе құпиясөз қате. ' + (error.message.includes('confirm') ? 'Поштаңызды растаңыз.' : ''); }
   } else {
-    const { data, error } = await sb.auth.signUp({ email, password, options: { data: { full_name: $('aName').value.trim() } } });
+    const { data, error } = await sb.auth.signUp({ email, password, options: { data: { full_name: $('aName').value.trim() }, emailRedirectTo: location.origin + location.pathname.replace(/[^/]*$/, '') + 'teacher.html' } });
     if (error) { msg.className = 'small mb-3 text-danger'; msg.textContent = error.message; return; }
     if (!data.session) { msg.className = 'small mb-3 text-success'; msg.textContent = '✅ Тіркелдіңіз! Поштаңызға келген сілтемені басып, email растаңыз да, «Кіру» арқылы кіріңіз.'; }
   }
