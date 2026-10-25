@@ -20,11 +20,30 @@
       <div class="text-center mb-3"><i class="bi bi-person-workspace display-4 text-primary"></i><h4 class="fw-bold mt-2">Мұғалімдер кабинеті</h4></div>
       <div class="btn-group w-100 mb-4"><button class="btn btn-primary" id="tabIn">Кіру</button><button class="btn btn-outline-primary" id="tabUp">Тіркелу</button></div>
       <form id="authForm">
-        <input id="aName" class="form-control mb-3 d-none" placeholder="Аты-жөніңіз">
+        <input id="aName" class="form-control mb-3 d-none" placeholder="Аты-жөніңіз" autocomplete="name">
+        <input id="aNick" class="form-control mb-1 d-none" placeholder="Никнейм (мыс: ustaz_aibek)" maxlength="20" autocomplete="nickname" autocapitalize="none">
+        <div id="aNickHint" class="form-text mb-3 d-none">3–20 таңба: әріп, сан, _ . -</div>
         <input id="aMail" type="text" inputmode="email" autocapitalize="none" autocomplete="username" class="form-control mb-3" placeholder="Email" required>
-        <input id="aPass" type="password" class="form-control mb-3" placeholder="Құпиясөз (кемінде 6 таңба)" minlength="6" required>
+        <input id="aPass" type="password" class="form-control mb-2" placeholder="Құпиясөз" autocomplete="current-password" required>
+        <ul id="pwRules" class="pw-rules d-none"></ul>
+        <input id="aPass2" type="password" class="form-control mb-3 d-none" placeholder="Құпиясөзді қайталаңыз" autocomplete="new-password">
+        <a href="#" id="aForgot" class="small d-block text-end mb-3">Құпиясөзді ұмыттыңыз ба?</a>
         <div id="aMsg" class="small mb-3"></div>
+        <button type="button" id="aResend" class="btn btn-outline-primary btn-sm rounded-pill w-100 mb-3 d-none"><i class="bi bi-envelope-arrow-up me-1"></i>Сілтемені қайта жіберу</button>
         <button class="btn btn-primary w-100 rounded-pill fw-bold" id="aBtn">Кіру</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="recBox" class="d-none" style="max-width:440px;margin:auto">
+    <div class="panel p-4 p-md-5">
+      <div class="text-center mb-3"><i class="bi bi-key-fill display-4 text-primary"></i><h4 class="fw-bold mt-2">Жаңа құпиясөз</h4><div class="small text-muted">Жаңа құпиясөзді енгізіңіз</div></div>
+      <form id="recForm">
+        <input id="rPass" type="password" class="form-control mb-2" placeholder="Жаңа құпиясөз" autocomplete="new-password" required>
+        <ul id="rRules" class="pw-rules"></ul>
+        <input id="rPass2" type="password" class="form-control mb-3" placeholder="Құпиясөзді қайталаңыз" autocomplete="new-password" required>
+        <div id="rMsg" class="small mb-3"></div>
+        <button class="btn btn-primary w-100 rounded-pill fw-bold">Құпиясөзді сақтау</button>
       </form>
     </div>
   </div>
@@ -74,16 +93,83 @@ const sb = createClient('https://jkvjtjjimqvppvogotiu.supabase.co','eyJhbGciOiJI
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let mode = 'in', students = [], results = [];
+let recovering = location.hash.includes('type=recovery');   // құпиясөзді қалпына келтіру сілтемесімен келді
+
+// ---------- Құпиясөз талаптары ----------
+const RULES = [
+  ['Кемінде 8 таңба', p => p.length >= 8],
+  ['Бас әріп (A–Z, А–Я)', p => /\p{Lu}/u.test(p)],
+  ['Кіші әріп (a–z, а–я)', p => /\p{Ll}/u.test(p)],
+  ['Кемінде 1 сан', p => /\d/.test(p)],
+  ['Бос орынсыз', p => p.length > 0 && !/\s/.test(p)]
+];
+const pwOk = p => RULES.every(([, f]) => f(p));
+function drawRules(ul, p) { ul.innerHTML = RULES.map(([t, f]) => `<li class="${f(p) ? 'ok' : ''}">${t}</li>`).join(''); }
+const NICK_RE = /^[\p{L}\d_.-]{3,20}$/u;
+const redirectTo = () => location.origin + location.pathname.replace(/[^/]*$/, '') + 'teacher.html';
+let resendTimer = null;
+function showResend() {
+  const b = $('aResend'); b.classList.remove('d-none');
+  if (resendTimer) return;
+  b.disabled = false; b.innerHTML = '<i class="bi bi-envelope-arrow-up me-1"></i>Сілтемені қайта жіберу';
+}
+function startCooldown() {
+  const b = $('aResend'); let s = 60; b.disabled = true;
+  const tick = () => { b.textContent = `Қайта жіберу (${s} сек)`; if (s-- <= 0) { clearInterval(resendTimer); resendTimer = null; showResend(); } };
+  tick(); resendTimer = setInterval(tick, 1000);
+}
+$('aResend').addEventListener('click', async () => {
+  const email = $('aMail').value.trim(), msg = $('aMsg');
+  if (!email) { msg.className = 'small mb-3 text-danger'; msg.textContent = 'Алдымен email жазыңыз.'; return; }
+  const { error } = await sb.auth.resend({ type: 'signup', email, options: { emailRedirectTo: redirectTo() } });
+  if (error) { msg.className = 'small mb-3 text-danger'; msg.textContent = error.message.includes('rate') || error.status === 429 ? 'Тым жиі сұраныс. Біраз күте тұрып, қайталаңыз.' : 'Қате: ' + error.message; return; }
+  msg.className = 'small mb-3 text-success'; msg.textContent = '✅ Растау сілтемесі қайта жіберілді. Поштаңызды (Спам бумасын да) тексеріңіз.';
+  startCooldown();
+});
 
 // ---------- Кіру / тіркелу ----------
 function setMode(m) {
   mode = m;
   $('tabIn').className = 'btn ' + (m === 'in' ? 'btn-primary' : 'btn-outline-primary');
   $('tabUp').className = 'btn ' + (m === 'up' ? 'btn-primary' : 'btn-outline-primary');
-  $('aName').classList.toggle('d-none', m === 'in'); $('aName').required = m === 'up';
-  $('aBtn').textContent = m === 'in' ? 'Кіру' : 'Тіркелу'; $('aMsg').textContent = '';
+  const up = m === 'up';
+  $('aName').classList.toggle('d-none', !up); $('aName').required = up;
+  $('aNick').classList.toggle('d-none', !up); $('aNick').required = up; $('aNickHint').classList.toggle('d-none', !up);
+  $('aPass2').classList.toggle('d-none', !up); $('aPass2').required = up;
+  $('pwRules').classList.toggle('d-none', !up);
+  $('aForgot').classList.toggle('d-none', up);
+  $('aPass').autocomplete = up ? 'new-password' : 'current-password';
+  if (up) drawRules($('pwRules'), $('aPass').value);
+  $('aBtn').textContent = m === 'in' ? 'Кіру' : 'Тіркелу'; $('aMsg').textContent = ''; if (!resendTimer) $('aResend').classList.add('d-none');
 }
 $('tabIn').onclick = () => setMode('in'); $('tabUp').onclick = () => setMode('up');
+$('aPass').addEventListener('input', () => { if (mode === 'up') drawRules($('pwRules'), $('aPass').value); });
+$('rPass').addEventListener('input', () => drawRules($('rRules'), $('rPass').value));
+drawRules($('rRules'), '');
+setMode('in');
+
+// ---------- Құпиясөзді ұмыттым ----------
+$('aForgot').addEventListener('click', async e => {
+  e.preventDefault();
+  const email = $('aMail').value.trim(), msg = $('aMsg');
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { msg.className = 'small mb-3 text-danger'; msg.textContent = 'Алдымен жоғарыдағы өріске email жазыңыз.'; $('aMail').focus(); return; }
+  msg.className = 'small mb-3 text-primary'; msg.textContent = 'Күте тұрыңыз...';
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: redirectTo() });
+  if (error) { msg.className = 'small mb-3 text-danger'; msg.textContent = error.status === 429 ? 'Тым жиі сұраныс. Біраз күте тұрып, қайталаңыз.' : 'Қате: ' + error.message; return; }
+  msg.className = 'small mb-3 text-success'; msg.textContent = '✅ Егер бұл email тіркелген болса, құпиясөзді қалпына келтіру сілтемесі жіберілді. Поштаңызды (Спам бумасын да) тексеріңіз.';
+});
+$('recForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const p = $('rPass').value, msg = $('rMsg');
+  if (!pwOk(p)) { msg.className = 'small mb-3 text-danger'; msg.textContent = 'Құпиясөз талаптарға сәйкес емес.'; return; }
+  if (p !== $('rPass2').value) { msg.className = 'small mb-3 text-danger'; msg.textContent = 'Құпиясөздер сәйкес емес.'; return; }
+  msg.className = 'small mb-3 text-primary'; msg.textContent = 'Күте тұрыңыз...';
+  const { error } = await sb.auth.updateUser({ password: p });
+  if (error) { msg.className = 'small mb-3 text-danger'; msg.textContent = 'Қате: ' + error.message; return; }
+  recovering = false; history.replaceState(null, '', location.pathname);
+  $('recBox').classList.add('d-none');
+  const { data } = await sb.auth.getSession(); show(data.session?.user);
+});
 $('authForm').addEventListener('submit', async e => {
   e.preventDefault();
   const email = $('aMail').value.trim(), password = $('aPass').value, msg = $('aMsg');
@@ -96,25 +182,37 @@ $('authForm').addEventListener('submit', async e => {
   msg.className = 'small mb-3 text-primary'; msg.textContent = 'Күте тұрыңыз...';
   if (mode === 'in') {
     const { error } = await sb.auth.signInWithPassword({ email, password });
-    if (error) { msg.className = 'small mb-3 text-danger'; msg.textContent = 'Email немесе құпиясөз қате. ' + (error.message.includes('confirm') ? 'Поштаңызды растаңыз.' : ''); }
+    if (error) { const unconf = /confirm/i.test(error.message); msg.className = 'small mb-3 text-danger'; msg.textContent = unconf ? 'Email әлі расталмаған. Поштаңыздағы сілтемені басыңыз немесе жаңасын сұраңыз.' : 'Email немесе құпиясөз қате.'; if (unconf) showResend(); }
   } else {
-    const { data, error } = await sb.auth.signUp({ email, password, options: { data: { full_name: $('aName').value.trim() }, emailRedirectTo: location.origin + location.pathname.replace(/[^/]*$/, '') + 'teacher.html' } });
+    const nick = $('aNick').value.trim();
+    const bad = !NICK_RE.test(nick) ? 'Никнейм 3–20 таңба болуы керек: әріп, сан, _ . -'
+      : !pwOk(password) ? 'Құпиясөз талаптарға сәйкес емес (төмендегі тізімді қараңыз).'
+      : password !== $('aPass2').value ? 'Құпиясөздер сәйкес емес.' : '';
+    if (bad) { msg.className = 'small mb-3 text-danger'; msg.textContent = bad; return; }
+    const { data, error } = await sb.auth.signUp({ email, password, options: { data: { full_name: $('aName').value.trim(), nickname: nick }, emailRedirectTo: redirectTo() } });
     if (error) { msg.className = 'small mb-3 text-danger'; msg.textContent = error.message; return; }
-    if (!data.session) { msg.className = 'small mb-3 text-success'; msg.textContent = '✅ Тіркелдіңіз! Поштаңызға келген сілтемені басып, email растаңыз да, «Кіру» арқылы кіріңіз.'; }
+    if (!data.session) { msg.className = 'small mb-3 text-success'; msg.textContent = '✅ Тіркелдіңіз! Поштаңызға келген сілтемені басып, email растаңыз да, «Кіру» арқылы кіріңіз.'; showResend(); }
   }
 });
 $('logout').onclick = () => sb.auth.signOut();
 
-sb.auth.onAuthStateChange((_e, session) => show(session?.user));
+sb.auth.onAuthStateChange((ev, session) => {
+  if (ev === 'PASSWORD_RECOVERY') { recovering = true; show(session?.user); return; }
+  show(session?.user);
+});
 sb.auth.getSession().then(({ data }) => show(data.session?.user));
 
 async function show(user) {
   if (window.renderNav) window.renderNav();
+  if (recovering) {   // құпиясөзді қалпына келтіру режимі: тек жаңа құпиясөз формасы
+    $('authBox').classList.add('d-none'); $('dash').classList.add('d-none'); $('recBox').classList.remove('d-none');
+    return;
+  }
   if (user && new URLSearchParams(location.search).get('from') === 'kmzh') { location.replace('kmzh.html'); return; }
   $('authBox').classList.toggle('d-none', !!user);
   $('dash').classList.toggle('d-none', !user);
   if (!user) return;
-  $('tName').textContent = user.user_metadata?.full_name || user.email;
+  $('tName').textContent = user.user_metadata?.nickname || user.user_metadata?.full_name || user.email;
   await load();
 }
 
