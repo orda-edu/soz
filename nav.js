@@ -27,12 +27,16 @@
     const links = [['index.html', 'Сөз іздеу'], ['games.html', 'Ойындар'], ['videos.html', 'Бейнесабақтар']];
     if (auth) links.push(['kmzh.html', 'ҚМЖ']); // тек мұғалімге көрінеді
     links.push(['about.html', 'Жоба туралы']);
+    const tabs = [['index.html', 'bi-search', 'Іздеу'], ['games.html', 'bi-controller', 'Ойындар'], ['videos.html', 'bi-play-circle-fill', 'Бейне']];
+    if (auth) tabs.push(['kmzh.html', 'bi-journal-text', 'ҚМЖ']);
+    tabs.push(['about.html', 'bi-info-circle-fill', 'Жоба']);
+    tabs.push(['teacher.html', auth ? 'bi-person-circle' : 'bi-box-arrow-in-right', auth ? 'Кабинет' : 'Кіру']);
     host.innerHTML = `
     <nav class="navbar navbar-expand-lg site-nav sticky-top">
       <div class="container">
         <a class="brand" href="index.html">SözÖrnegi<span class="text-primary">.kz</span></a>
-        <div class="ms-auto me-2 d-lg-none">${themeBtn()}</div>
-        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu" aria-label="Мәзір">
+        <div class="ms-auto d-lg-none">${themeBtn()}</div>
+        <button class="navbar-toggler border-0 d-none" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu" aria-label="Мәзір">
           <i class="bi bi-list fs-2" style="color:#1e3a8a"></i>
         </button>
         <div class="collapse navbar-collapse justify-content-end" id="navMenu">
@@ -43,6 +47,9 @@
           </ul>
         </div>
       </div>
+    </nav>
+    <nav class="bottom-nav d-lg-none" aria-label="Негізгі мәзір">
+      ${tabs.map(([href, ic, t]) => `<a class="bn-item ${href === current ? 'active' : ''}" href="${href}"><i class="bi ${ic}"></i><span>${t}</span></a>`).join('')}
     </nav>`;
   }
 
