@@ -32,7 +32,7 @@ const app = document.getElementById('app');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const title = (t, c) => `<h2 class="text-center fw-bold mb-4" style="color:${c || '#1e3a8a'}">${t}</h2>`;
-let cache = null, Q = null, M = null, student = null;
+let cache = null, Q = null, M = null, student = null, cur = null;
 try { student = JSON.parse(localStorage.getItem('student') || 'null'); } catch (e) {}
 const sbar = () => student
   ? `<div class="panel p-3 mb-4 mx-auto d-flex justify-content-between align-items-center flex-wrap gap-2" style="max-width:640px"><span><i class="bi bi-person-check-fill text-success me-2"></i>Оқушы: <b>${esc(student.name)}</b> — нәтижелер мұғалімге сақталады</span><button class="btn btn-sm btn-outline-secondary rounded-pill" data-act="slogout">Шығу</button></div>`
@@ -44,9 +44,9 @@ async function slogin() {
   if (error || !data || !data.length) { document.getElementById('sErr').textContent = 'Код табылмады. Мұғалімнен сұраңыз.'; return; }
   student = { code, name: data[0].full_name };
   try { localStorage.setItem('student', JSON.stringify(student)); } catch (e) {}
-  home();
+  (cur || home)();
 }
-function slogout() { student = null; try { localStorage.removeItem('student'); } catch (e) {} home(); }
+function slogout() { student = null; try { localStorage.removeItem('student'); } catch (e) {} (cur || home)(); }
 async function saveResult(game, score, total) {
   if (!student) return;
   const { error } = await sb.rpc('save_result', { p_code: student.code, p_game: game, p_score: score, p_total: total });
@@ -66,13 +66,19 @@ const note = m => `<div class="panel p-5 text-center"><i class="bi bi-info-circl
 
 // ---------- Басты ----------
 function home() {
-  const card = (ic, col, t, d, act) => `<div class="col-md-4"><div class="game-card panel h-100 text-center p-4">
+  const card = (ic, col, t, d, act) => `<div class="col-sm-6 col-lg-3"><div class="game-card panel h-100 text-center p-4">
     <i class="bi ${ic} text-${col}" style="font-size:4rem"></i><h4 class="fw-bold mt-3">${t}</h4>
     <p class="text-muted my-3">${d}</p><button class="btn btn-outline-${col} w-100 rounded-pill fw-bold" data-act="${act}">ОЙНАУ <i class="bi bi-play-fill"></i></button></div></div>`;
-  app.innerHTML = `<div class="pt-2"></div>` + title('Ойындарды таңдаңыз') + sbar() + `<div class="row g-4">
+  cur = null;
+  app.innerHTML = `<div class="pt-2"></div>` + title('Ойындарды таңдаңыз') + `<div class="row g-4 justify-content-center">
     ${card('bi-question-circle-fill', 'primary', 'Тест: Мағынаны тап', 'Сөз беріледі, оның дұрыс мағынасын нұсқалардан табыңыз.', 'quizSetup')}
     ${card('bi-puzzle-fill', 'success', 'Сәйкестендіру', 'Сөздер мен мағыналарды бір-бірімен сәйкестендіріңіз.', 'matchSetup')}
-    ${card('bi-images', 'warning', 'Суретті тап', 'Суретке қарап, жасырылған атауды табыңыз.', 'picture')}</div>`;
+    ${card('bi-images', 'warning', 'Суретті тап', 'Суретке қарап, жасырылған атауды табыңыз.', 'picture')}
+    ${card('bi-shuffle', 'danger', 'Сөзді құрастыр', 'Араласып кеткен әріптерден сөзді жинап, мағынасы бойынша табыңыз.', 'anaSetup')}
+    ${card('bi-person-lines-fill', 'info', 'Авторды тап', 'Сөздің қай автордың шығармасынан алынғанын табыңыз.', 'authSetup')}
+    ${card('bi-patch-question-fill', 'secondary', 'Шын ба, жалған ба?', 'Сөз бен мағына сәйкес келе ме? Тез шешім қабылдаңыз.', 'tfSetup')}
+    ${card('bi-book-half', 'primary', 'Шығарманы тап', 'Сөз қай шығармада кездеседі? Дұрыс нұсқаны таңдаңыз.', 'workSetup')}
+    ${card('bi-card-text', 'dark', 'Жаттау карточкалары', 'Сөзді көріп, мағынасын еске түсіріп, картаны аударыңыз.', 'cardsStart')}</div>`;
 }
 
 // ---------- Тест ----------
@@ -80,7 +86,8 @@ async function quizSetup() {
   app.innerHTML = '<div class="text-center text-muted">Жүктелуде...</div>';
   let ws; try { ws = await getWords(); } catch (e) { app.innerHTML = note('Қате: ' + esc(e.message)); return; }
   const works = [...new Set(ws.map(w => w.work).filter(Boolean))];
-  app.innerHTML = title('Тест параметрлері') + `<div class="panel p-4 p-md-5" style="max-width:560px;margin:auto">
+  cur = quizSetup;
+  app.innerHTML = title('Тест параметрлері') + sbar() + `<div class="panel p-4 p-md-5" style="max-width:560px;margin:auto">
     <label class="form-label fw-bold">Шығарма:</label>
     <select id="qWork" class="form-select form-select-lg mb-4"><option value="">📚 Барлық шығармалар</option>${works.map(w => `<option>${esc(w)}</option>`).join('')}</select>
     <label class="form-label fw-bold">Сұрақ саны:</label>
@@ -102,7 +109,7 @@ function quizQ() {
   const it = Q.items[Q.i], pct = Q.i / Q.items.length * 100;
   app.innerHTML = `<div class="progress mb-4" style="height:8px"><div class="progress-bar" style="width:${pct}%"></div></div>
     <div class="panel p-4 p-md-5"><div class="text-muted mb-2">Сұрақ ${Q.i + 1}/${Q.items.length}</div>
-    <h4 class="mb-4"><b>"${esc(it.q)}"</b> сөзінің мағынасы қайсы?</h4>
+    <h4 class="mb-4">${it.html || `<b>"${esc(it.q)}"</b> сөзінің мағынасы қайсы?`}</h4>
     ${it.options.map((o, k) => `<button class="opt" data-act="pick" data-k="${k}">${esc(o)}</button>`).join('')}</div>`;
 }
 function quizPick(k) {
@@ -115,15 +122,15 @@ function quizPick(k) {
 }
 function quizResult() {
   const ok = Q.items.filter(i => i.user === i.correct).length, t = Q.items.length, good = ok >= t / 2;
-  saveResult('Тест', ok, t);
+  saveResult(Q.name || 'Тест', ok, t);
   app.innerHTML = `<div class="page-hero p-5 text-center mb-4" style="background:${good ? 'linear-gradient(135deg,#198754,#20c997)' : 'linear-gradient(135deg,#dc3545,#ff6b6b)'}">
     <h3 class="fw-bold">${ok === t ? '🏆 Керемет! Барлығы дұрыс!' : good ? '👏 Жақсы нәтиже!' : '😔 Келесі жолы сәттілік!'}</h3>
     <div class="display-3 fw-bold">${ok} <span class="fs-4">/ ${t}</span></div></div>
     <h5 class="fw-bold mb-3">Жауаптарды талдау</h5>
     ${Q.items.map((i, n) => `<div class="panel p-3 mb-2"><div class="fw-bold">#${n + 1} ${esc(i.q)}</div>
-      ${i.user === i.correct ? `<span class="badge bg-success mt-2 text-wrap text-start">✓ ${esc(i.user)}</span>`
+      ${i.sub ? `<div class="small text-muted">${esc(i.sub)}</div>` : ''}${i.user === i.correct ? `<span class="badge bg-success mt-2 text-wrap text-start">✓ ${esc(i.user)}</span>`
       : `<span class="badge bg-danger mt-2 text-wrap text-start">✗ Сіз: ${esc(i.user)}</span><br><span class="badge bg-success mt-1 text-wrap text-start">✓ Дұрысы: ${esc(i.correct)}</span>`}</div>`).join('')}
-    <div class="text-center small text-muted mt-3" id="saveNote"></div><div class="text-center mt-3"><button class="btn btn-primary rounded-pill px-4 me-2" data-act="quizSetup">Қайта тапсыру</button>
+    <div class="text-center small text-muted mt-3" id="saveNote"></div><div class="text-center mt-3"><button class="btn btn-primary rounded-pill px-4 me-2" data-act="${Q.again || 'quizSetup'}">Қайта тапсыру</button>
     <button class="btn btn-outline-secondary rounded-pill px-4" data-act="home">Ойындар тізімі</button></div>`;
 }
 
@@ -131,7 +138,8 @@ function quizResult() {
 async function matchSetup() {
   app.innerHTML = '<div class="text-center text-muted">Жүктелуде...</div>';
   try { await getWords(); } catch (e) { app.innerHTML = note('Қате: ' + esc(e.message)); return; }
-  app.innerHTML = title('Сәйкестендіру ойыны', '#198754') + `<div class="panel p-4 p-md-5" style="max-width:480px;margin:auto">
+  cur = matchSetup;
+  app.innerHTML = title('Сәйкестендіру ойыны', '#198754') + sbar() + `<div class="panel p-4 p-md-5" style="max-width:480px;margin:auto">
     <label class="form-label fw-bold">Жұп саны:</label>
     <select id="mCount" class="form-select form-select-lg mb-4"><option>5</option><option>8</option><option>10</option></select>
     <button class="btn btn-success btn-lg w-100 fw-bold" data-act="matchStart">Бастау</button>
@@ -188,8 +196,8 @@ async function picture() {
   if (error || !data || !data.length) {
     app.innerHTML = note('Суретті тап ойынына әзірге суреттер қосылмаған. Суреттер базаға қосылған соң ойын осы жерде шығады.'); return;
   }
-  window.__pics = data;
-  app.innerHTML = title('Суретті тап', '#b45309') + data.map((p, i) => `<div class="panel p-4 mb-4 text-center">
+  window.__pics = data; cur = picture;
+  app.innerHTML = title('Суретті тап', '#b45309') + sbar() + data.map((p, i) => `<div class="panel p-4 mb-4 text-center">
     <img src="${esc(p.image_url)}" class="img-fluid rounded mb-3" style="max-height:300px" alt="">
     <h5>Бұл не?</h5><input class="form-control w-75 mx-auto mt-2" id="pa${i}" placeholder="Жауапты жазыңыз...">
     <button class="btn btn-warning text-white mt-3" data-act="pcheck" data-i="${i}">Тексеру</button>
@@ -202,8 +210,141 @@ function pcheck(i) {
   r.textContent = ok ? 'Дұрыс! ✅' : 'Қате! Дұрыс жауап: ' + c; r.className = 'mt-2 fw-bold mb-0 text-' + (ok ? 'success' : 'danger');
 }
 
+
+// ---------- Жаңа ойындар: жалпы параметр беті ----------
+const GAMES = {
+  ana:  { t: 'Сөзді құрастыр', c: '#dc3545', btn: 'danger', start: 'anaStart', back: 'anaSetup' },
+  auth: { t: 'Авторды тап', c: '#0dcaf0', btn: 'info', start: 'authStart', back: 'authSetup' },
+  work: { t: 'Шығарманы тап', c: '#0d6efd', btn: 'primary', start: 'workStart', back: 'workSetup' },
+  tf:   { t: 'Шын ба, жалған ба?', c: '#6c757d', btn: 'secondary', start: 'tfStart', back: 'tfSetup' }
+};
+async function gameSetup(k, setup) {
+  app.innerHTML = '<div class="text-center text-muted">Жүктелуде...</div>';
+  try { await getWords(); } catch (e) { app.innerHTML = note('Қате: ' + esc(e.message)); return; }
+  const g = GAMES[k]; cur = setup;
+  app.innerHTML = title(g.t, g.c) + sbar() + `<div class="panel p-4 p-md-5" style="max-width:480px;margin:auto">
+    <label class="form-label fw-bold">Сұрақ саны:</label>
+    <select id="gCount" class="form-select form-select-lg mb-4"><option>5</option><option selected>10</option><option>15</option><option>20</option></select>
+    <button class="btn btn-${g.btn} btn-lg w-100 fw-bold" data-act="${g.start}">Бастау</button>
+    <button class="btn btn-outline-secondary w-100 mt-2" data-act="home">Артқа</button></div>`;
+}
+const anaSetup = () => gameSetup('ana', anaSetup), authSetup = () => gameSetup('auth', authSetup), tfSetup = () => gameSetup('tf', tfSetup), workSetup = () => gameSetup('work', workSetup);
+const gCount = () => +document.getElementById('gCount').value;
+
+// ---------- Авторды тап ----------
+function authStart() {
+  const n = gCount(), pool = cache.filter(w => w.author && w.author.trim());
+  const authors = [...new Set(pool.map(w => w.author.trim()))];
+  if (authors.length < 2) { app.innerHTML = note('Бұл ойын үшін базада кемінде 2 автор болуы керек.'); return; }
+  Q = { i: 0, name: 'Авторды тап', again: 'authSetup', items: shuffle(pool).slice(0, n).map(w => {
+    const a = w.author.trim(), others = shuffle(authors.filter(x => x !== a)).slice(0, 3);
+    return { q: w.word, sub: w.meaning, html: `<b>"${esc(w.word)}"</b> сөзі қай автордың шығармасынан алынған?<div class="small text-muted mt-2">${esc(w.meaning)}</div>`,
+      correct: a, options: shuffle([a, ...others]), user: null };
+  }) };
+  quizQ();
+}
+
+// ---------- Шығарманы тап ----------
+function workStart() {
+  const n = gCount(), pool = cache.filter(w => w.work && w.work.trim());
+  const works = [...new Set(pool.map(w => w.work.trim()))];
+  if (works.length < 2) { app.innerHTML = note('Бұл ойын үшін базада кемінде 2 шығарма болуы керек.'); return; }
+  Q = { i: 0, name: 'Шығарманы тап', again: 'workSetup', items: shuffle(pool).slice(0, n).map(w => {
+    const a = w.work.trim(), others = shuffle(works.filter(x => x !== a)).slice(0, 3);
+    return { q: w.word, sub: w.meaning, html: `<b>"${esc(w.word)}"</b> сөзі қай шығармада кездеседі?<div class="small text-muted mt-2">${esc(w.meaning)}</div>`,
+      correct: a, options: shuffle([a, ...others]), user: null };
+  }) };
+  quizQ();
+}
+
+// ---------- Шын ба, жалған ба? ----------
+function tfStart() {
+  const n = gCount(), meanings = [...new Set(cache.map(x => x.meaning))];
+  if (meanings.length < 2) { app.innerHTML = note('Ойын үшін кемінде 2 сөз қажет.'); return; }
+  Q = { i: 0, name: 'Шын/Жалған', again: 'tfSetup', items: shuffle(cache).slice(0, n).map(w => {
+    const truth = Math.random() < .5;
+    const shown = truth ? w.meaning : shuffle(meanings.filter(m => m !== w.meaning))[0];
+    return { q: w.word, sub: 'Дұрыс мағынасы: ' + w.meaning,
+      html: `<b>"${esc(w.word)}"</b> сөзінің мағынасы:<div class="p-3 my-3 rounded-3 bg-body-secondary fw-normal">${esc(shown)}</div>Бұл дұрыс па?`,
+      correct: truth ? 'Шын' : 'Жалған', options: ['Шын', 'Жалған'], user: null };
+  }) };
+  quizQ();
+}
+
+// ---------- Сөзді құрастыр ----------
+let A = null;
+const lc = s => String(s).trim().toLocaleLowerCase('kk');
+function scramble(w) {
+  const ch = Array.from(w); let r = ch;
+  for (let t = 0; t < 10 && r.join('') === w; t++) r = shuffle(ch);
+  return r;
+}
+function anaStart() {
+  const n = gCount(), pool = cache.filter(w => /^[^\s]{4,12}$/u.test(w.word.trim()));
+  if (pool.length < 2) { app.innerHTML = note('Ойын үшін базада жеткілікті бір сөзді жазбалар жоқ.'); return; }
+  A = { i: 0, ok: 0, items: shuffle(pool).slice(0, n).map(w => ({ word: w.word.trim(), meaning: w.meaning, user: '' })) };
+  anaQ();
+}
+function anaQ() {
+  const it = A.items[A.i], pct = A.i / A.items.length * 100;
+  app.innerHTML = `<div class="progress mb-4" style="height:8px"><div class="progress-bar bg-danger" style="width:${pct}%"></div></div>
+    <div class="panel p-4 p-md-5 text-center"><div class="text-muted mb-2">Сұрақ ${A.i + 1}/${A.items.length}</div>
+    <div class="mb-3">${scramble(it.word).map(c => `<span class="badge text-bg-danger fs-3 m-1 px-3 py-2 text-uppercase">${esc(c)}</span>`).join('')}</div>
+    <p class="text-muted">Мағынасы: <i>${esc(it.meaning)}</i></p>
+    <input id="anaIn" class="form-control form-control-lg text-center mx-auto mb-3" style="max-width:360px" placeholder="Сөзді жазыңыз" autocomplete="off" autocapitalize="none">
+    <div id="anaMsg" class="fw-bold mb-3" style="min-height:1.5em"></div>
+    <button class="btn btn-danger rounded-pill px-4" id="anaBtn" data-act="anaCheck">Тексеру</button></div>`;
+  document.getElementById('anaIn').focus();
+}
+function anaCheck() {
+  const it = A.items[A.i], inp = document.getElementById('anaIn'), msg = document.getElementById('anaMsg'), btn = document.getElementById('anaBtn');
+  if (btn.dataset.next) { A.i++; A.i < A.items.length ? anaQ() : anaResult(); return; }
+  if (!inp.value.trim()) return;
+  it.user = inp.value.trim(); const ok = lc(it.user) === lc(it.word);
+  if (ok) A.ok++;
+  inp.disabled = true; msg.className = 'fw-bold mb-3 text-' + (ok ? 'success' : 'danger');
+  msg.textContent = ok ? 'Дұрыс! ✅' : 'Қате ❌ Дұрыс жауап: ' + it.word;
+  btn.dataset.next = '1'; btn.textContent = A.i + 1 < A.items.length ? 'Келесі' : 'Нәтиже'; btn.focus();
+}
+function anaResult() {
+  const t = A.items.length, good = A.ok >= t / 2;
+  saveResult('Сөзді құрастыр', A.ok, t);
+  app.innerHTML = `<div class="page-hero p-5 text-center mb-4" style="background:${good ? 'linear-gradient(135deg,#198754,#20c997)' : 'linear-gradient(135deg,#dc3545,#ff6b6b)'}">
+    <h3 class="fw-bold">${A.ok === t ? '🏆 Керемет!' : good ? '👏 Жақсы нәтиже!' : '😔 Келесі жолы сәттілік!'}</h3>
+    <div class="display-3 fw-bold">${A.ok} <span class="fs-4">/ ${t}</span></div></div>
+    ${A.items.map((i, n) => `<div class="panel p-3 mb-2"><b>#${n + 1} ${esc(i.word)}</b> — <span class="text-muted">${esc(i.meaning)}</span>
+      ${lc(i.user) === lc(i.word) ? '<span class="badge bg-success ms-2">✓</span>' : `<span class="badge bg-danger ms-2 text-wrap">✗ ${esc(i.user || '—')}</span>`}</div>`).join('')}
+    <div class="text-center small text-muted mt-3" id="saveNote"></div><div class="text-center mt-3"><button class="btn btn-danger rounded-pill px-4 me-2" data-act="anaSetup">Қайта ойнау</button>
+    <button class="btn btn-outline-secondary rounded-pill px-4" data-act="home">Ойындар тізімі</button></div>`;
+}
+
+// ---------- Жаттау карточкалары ----------
+let C = null;
+async function cardsStart() {
+  app.innerHTML = '<div class="text-center text-muted">Жүктелуде...</div>';
+  try { await getWords(); } catch (e) { app.innerHTML = note('Қате: ' + esc(e.message)); return; }
+  if (!cache.length) { app.innerHTML = note('Базада сөздер жоқ.'); return; }
+  cur = null; C = { i: 0, flip: false, items: shuffle(cache).slice(0, 30) };
+  cardDraw();
+}
+function cardDraw() {
+  const it = C.items[C.i];
+  app.innerHTML = title('Жаттау карточкалары', '#212529') + `<div class="mx-auto" style="max-width:560px">
+    <div class="small text-muted text-center mb-2">${C.i + 1} / ${C.items.length} · картаны басып аударыңыз</div>
+    <div class="panel p-4 p-md-5 text-center d-flex flex-column justify-content-center" style="min-height:240px;cursor:pointer" data-act="cflip">
+      ${C.flip ? `<div class="fs-5">${esc(it.meaning)}</div>${it.author ? `<div class="small text-muted mt-3">${esc(it.author)}${it.work ? ' · ' + esc(it.work) : ''}</div>` : ''}`
+               : `<div class="display-5 fw-bold">${esc(it.word)}</div><div class="text-muted mt-2 small">Мағынасы қандай?</div>`}</div>
+    <div class="d-flex justify-content-between mt-3">
+      <button class="btn btn-outline-secondary rounded-pill px-4" data-act="cprev" ${C.i === 0 ? 'disabled' : ''}><i class="bi bi-arrow-left"></i></button>
+      <button class="btn btn-outline-secondary rounded-pill px-4" data-act="home">Ойындар тізімі</button>
+      <button class="btn btn-dark rounded-pill px-4" data-act="cnext">${C.i + 1 < C.items.length ? '<i class="bi bi-arrow-right"></i>' : 'Қайта'}</button></div></div>`;
+}
+const cflip = () => { C.flip = !C.flip; cardDraw(); };
+const cprev = () => { if (C.i > 0) { C.i--; C.flip = false; cardDraw(); } };
+const cnext = () => { C.i = C.i + 1 < C.items.length ? C.i + 1 : 0; C.flip = false; cardDraw(); };
+
 // ---------- Басқару ----------
-const acts = { slogin, slogout, home, quizSetup, quizStart, matchSetup, matchStart, picture };
+const acts = { slogin, slogout, home, quizSetup, quizStart, matchSetup, matchStart, picture, anaSetup, anaStart, anaCheck, authSetup, authStart, workSetup, workStart, tfSetup, tfStart, cardsStart, cflip, cprev, cnext };
 app.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b) return;
   const a = b.dataset.act;
@@ -212,7 +353,7 @@ app.addEventListener('click', e => {
   else if (a === 'pcheck') pcheck(+b.dataset.i);
   else acts[a]();
 });
-app.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'sCode') slogin(); });
+app.addEventListener('keydown', e => { if (e.key === 'Enter') { if (e.target.id === 'sCode') slogin(); else if (e.target.id === 'anaIn') anaCheck(); } });
 home();
 </script>
 </body>
