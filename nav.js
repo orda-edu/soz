@@ -24,10 +24,10 @@
     if (!host) return;
     const auth = logged();
     const current = location.pathname.split('/').pop() || 'index.html';
-    const links = [['index.html', 'Сөз іздеу'], ['games.html', 'Ойындар'], ['videos.html', 'Бейнесабақтар']];
+    const links = [['index.html', 'Сөз іздеу'], ['taldau.html', 'Мәтін талдау'], ['games.html', 'Ойындар'], ['videos.html', 'Бейнесабақтар']];
     if (auth) links.push(['kmzh.html', 'ҚМЖ']); // тек мұғалімге көрінеді
     links.push(['about.html', 'Жоба туралы']);
-    const tabs = [['index.html', 'bi-search', 'Іздеу'], ['games.html', 'bi-controller', 'Ойындар'], ['videos.html', 'bi-play-circle-fill', 'Бейне']];
+    const tabs = [['index.html', 'bi-search', 'Іздеу'], ['taldau.html', 'bi-file-earmark-text', 'Талдау'], ['games.html', 'bi-controller', 'Ойындар'], ['videos.html', 'bi-play-circle-fill', 'Бейне']];
     if (auth) tabs.push(['kmzh.html', 'bi-journal-text', 'ҚМЖ']);
     tabs.push(['about.html', 'bi-info-circle-fill', 'Жоба']);
     tabs.push(['teacher.html', auth ? 'bi-person-circle' : 'bi-box-arrow-in-right', auth ? 'Кабинет' : 'Кіру']);
@@ -69,7 +69,7 @@
           <div class="col-12 col-md-3">
             <h6>Бөлімдер</h6>
             <ul class="f-links">
-              <li><a href="index.html">Сөз іздеу</a></li>
+              <li><a href="index.html">Сөз іздеу</a></li>\n              <li><a href="taldau.html">Мәтін талдау</a></li>
               <li><a href="games.html">Ойындар</a></li>
               <li><a href="videos.html">Бейнесабақтар</a></li>
               <li><a href="teacher.html">Мұғалімдерге</a></li>
