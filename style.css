@@ -337,3 +337,54 @@ body::after{opacity:.4;-webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,.8) 
   .btn-search{flex:1 1 100%;margin-top:6px}
   [data-bs-theme=dark] .search-wrapper>.dropdown{border-bottom-color:#334155}
 }
+
+/* ================= Мобильді төменгі навигация (қалқып тұратын панель) ================= */
+.bottom-nav{display:none}
+@media(max-width:991.98px){
+  .bottom-nav{display:flex;position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:1060;
+    justify-content:space-around;align-items:center;gap:2px;padding:6px;border-radius:30px;
+    background:rgba(255,255,255,.82);-webkit-backdrop-filter:saturate(180%) blur(18px);backdrop-filter:saturate(180%) blur(18px);
+    border:1px solid rgba(148,163,184,.35);box-shadow:0 10px 30px rgba(30,58,138,.22)}
+  .bn-item{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 2px 6px;border-radius:24px;
+    color:#475569;text-decoration:none;font-size:10.5px;font-weight:600;line-height:1.1;transition:background .2s,color .2s}
+  .bn-item i{font-size:21px;line-height:1}
+  .bn-item span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bn-item:hover{color:#1e3a8a}
+  .bn-item.active{background:rgba(30,58,138,.12);color:#1e3a8a}
+  .bn-item.active i{transform:translateY(-1px)}
+  .site-footer{padding-bottom:calc(100px + env(safe-area-inset-bottom))!important}
+  [data-bs-theme=dark] .bottom-nav{background:rgba(30,41,59,.78);border-color:rgba(148,163,184,.25);box-shadow:0 10px 30px rgba(0,0,0,.55)}
+  [data-bs-theme=dark] .bn-item{color:#cbd5e1}
+  [data-bs-theme=dark] .bn-item.active{background:rgba(255,255,255,.14);color:#fff}
+}
+@media(max-width:360px){.bn-item{font-size:9.5px}.bn-item i{font-size:19px}}
+
+/* ================= Қазақ өрнегі (pattern_qazaq.svg) — маска арқылы, түсі тақырыпқа бейімделеді ================= */
+body::after{
+  background-image:none!important;background-color:#1e3a8a;opacity:.05;
+  -webkit-mask-image:url(pattern_qazaq.svg),linear-gradient(180deg,rgba(0,0,0,1),rgba(0,0,0,.55));
+  mask-image:url(pattern_qazaq.svg),linear-gradient(180deg,rgba(0,0,0,1),rgba(0,0,0,.55));
+  -webkit-mask-size:360px 360px,100% 100%;mask-size:360px 360px,100% 100%;
+  -webkit-mask-repeat:repeat,no-repeat;mask-repeat:repeat,no-repeat;
+  -webkit-mask-composite:source-in;mask-composite:intersect}
+[data-bs-theme=dark] body::after{background-color:#93b4ff;opacity:.05}
+@media(max-width:767.98px){body::after{-webkit-mask-size:260px 260px,100% 100%;mask-size:260px 260px,100% 100%}}
+
+/* ================= Компьютер: қалқып тұратын мәзір "аралы" ================= */
+@media(min-width:992px){
+  #nav{position:sticky;top:0;z-index:1050;padding:12px 20px 0;background:transparent;pointer-events:none}
+  #nav .site-nav{pointer-events:auto;max-width:1140px;margin:0 auto;padding:8px 14px 8px 24px;border-radius:34px;
+    background:rgba(255,255,255,.82);-webkit-backdrop-filter:saturate(180%) blur(18px);backdrop-filter:saturate(180%) blur(18px);
+    border:1px solid rgba(148,163,184,.35);box-shadow:0 10px 30px rgba(30,58,138,.16)}
+  #nav .site-nav>.container{max-width:none;padding:0}
+  [data-bs-theme=dark] #nav .site-nav{background:rgba(15,23,42,.78);border-color:rgba(148,163,184,.25);box-shadow:0 10px 30px rgba(0,0,0,.55)}
+  .site-nav .navbar-collapse{border-top:0}
+}
+
+/* ================= Бірдей ен: мәзір "аралы" Bootstrap container енімен сәйкес ================= */
+@media(min-width:992px){
+  #nav{width:100%;max-width:960px;margin:0 auto;padding:12px .75rem 0}
+  #nav .site-nav{max-width:none}
+}
+@media(min-width:1200px){#nav{max-width:1140px}}
+@media(min-width:1400px){#nav{max-width:1320px}}
