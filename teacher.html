@@ -29,8 +29,22 @@
         <input id="aPass2" type="password" class="form-control mb-3 d-none" placeholder="Құпиясөзді қайталаңыз" autocomplete="new-password">
         <a href="#" id="aForgot" class="small d-block text-end mb-3">Құпиясөзді ұмыттыңыз ба?</a>
         <div id="aMsg" class="small mb-3"></div>
-        <button type="button" id="aResend" class="btn btn-outline-primary btn-sm rounded-pill w-100 mb-3 d-none"><i class="bi bi-envelope-arrow-up me-1"></i>Сілтемені қайта жіберу</button>
+        <button type="button" id="aResend" class="btn btn-outline-primary btn-sm rounded-pill w-100 mb-3 d-none"><i class="bi bi-envelope-arrow-up me-1"></i>Кодты қайта жіберу</button>
         <button class="btn btn-primary w-100 rounded-pill fw-bold" id="aBtn">Кіру</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="otpBox" class="d-none" style="max-width:440px;margin:auto">
+    <div class="panel p-4 p-md-5">
+      <div class="text-center mb-3"><i class="bi bi-envelope-check-fill display-4 text-primary"></i><h4 class="fw-bold mt-2" id="otpTitle">Email растау</h4>
+        <div class="small text-muted">Кодты мына поштаға жібердік:<br><b id="otpMail"></b></div></div>
+      <form id="otpForm">
+        <input id="otpCode" class="form-control form-control-lg text-center mb-3" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="Код" style="letter-spacing:.4em;font-weight:700" required>
+        <div id="otpMsg" class="small mb-3"></div>
+        <button class="btn btn-primary w-100 rounded-pill fw-bold mb-2">Растау</button>
+        <button type="button" id="otpResend" class="btn btn-outline-primary btn-sm rounded-pill w-100 mb-2">Кодты қайта жіберу</button>
+        <a href="#" id="otpBack" class="small d-block text-center">← Артқа</a>
       </form>
     </div>
   </div>
@@ -76,7 +90,7 @@
       <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
         <h5 class="fw-bold mb-0"><i class="bi bi-bar-chart-fill text-primary me-2"></i>Ойын нәтижелері</h5>
         <div class="d-flex gap-2 flex-wrap"><select id="fSt" class="form-select form-select-sm"><option value="">Барлық оқушы</option></select>
-        <select id="fGame" class="form-select form-select-sm"><option value="">Барлық ойын</option><option>Тест</option><option>Сәйкестендіру</option></select></div>
+        <select id="fGame" class="form-select form-select-sm"><option value="">Барлық ойын</option><option>Тест</option><option>Сәйкестендіру</option><option>Сөзді құрастыр</option><option>Авторды тап</option><option>Шығарманы тап</option><option>Шын/Жалған</option></select></div>
       </div>
       <div class="table-responsive"><table class="table align-middle mb-0">
         <thead><tr><th>Оқушы</th><th>Ойын</th><th>Нәтиже</th><th>%</th><th>Күні</th></tr></thead>
@@ -111,20 +125,66 @@ let resendTimer = null;
 function showResend() {
   const b = $('aResend'); b.classList.remove('d-none');
   if (resendTimer) return;
-  b.disabled = false; b.innerHTML = '<i class="bi bi-envelope-arrow-up me-1"></i>Сілтемені қайта жіберу';
+  b.disabled = false; b.innerHTML = '<i class="bi bi-envelope-arrow-up me-1"></i>Кодты қайта жіберу';
 }
 function startCooldown() {
   const b = $('aResend'); let s = 60; b.disabled = true;
   const tick = () => { b.textContent = `Қайта жіберу (${s} сек)`; if (s-- <= 0) { clearInterval(resendTimer); resendTimer = null; showResend(); } };
   tick(); resendTimer = setInterval(tick, 1000);
 }
+const say = (el, cls, t) => { el.className = 'small mb-3 text-' + cls; el.textContent = t; };
+const errText = e => e.status === 429 || /rate/i.test(e.message) ? 'Тым жиі сұраныс. Біраз күте тұрып, қайталаңыз.' : 'Қате: ' + e.message;
+
+// ---------- Код арқылы растау (OTP) ----------
+let otp = null;   // { email, type: 'signup' | 'recovery' }
+let otpTimer = null;
+function otpCooldown() {
+  const b = $('otpResend'); let s = 60; b.disabled = true;
+  clearInterval(otpTimer);
+  const tick = () => { if (s <= 0) { clearInterval(otpTimer); b.disabled = false; b.textContent = 'Кодты қайта жіберу'; return; } b.textContent = `Қайта жіберу (${s--} сек)`; };
+  tick(); otpTimer = setInterval(tick, 1000);
+}
+function openOtp(email, type) {
+  otp = { email, type };
+  $('otpMail').textContent = email;
+  $('otpTitle').textContent = type === 'signup' ? 'Email растау' : 'Құпиясөзді қалпына келтіру';
+  $('otpCode').value = ''; $('otpMsg').textContent = '';
+  otpCooldown(); show(null);
+  setTimeout(() => $('otpCode').focus(), 50);
+}
+$('otpCode').addEventListener('input', e => { e.target.value = e.target.value.replace(/\D/g, ''); });
+$('otpBack').addEventListener('click', e => { e.preventDefault(); otp = null; clearInterval(otpTimer); show(null); });
+$('otpResend').addEventListener('click', async () => {
+  if (!otp) return;
+  const msg = $('otpMsg');
+  const { error } = otp.type === 'signup'
+    ? await sb.auth.resend({ type: 'signup', email: otp.email })
+    : await sb.auth.resetPasswordForEmail(otp.email);
+  if (error) return say(msg, 'danger', errText(error));
+  say(msg, 'success', '✅ Жаңа код жіберілді. Поштаңызды (Спам бумасын да) тексеріңіз.');
+  otpCooldown();
+});
+$('otpForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!otp) return;
+  const code = $('otpCode').value.trim(), msg = $('otpMsg');
+  if (code.length < 6) return say(msg, 'danger', 'Поштадағы кодты толық енгізіңіз.');
+  say(msg, 'primary', 'Тексеріліп жатыр...');
+  if (otp.type === 'recovery') recovering = true;   // сессия ашылғанда дашбордқа емес, жаңа құпиясөз формасына өту үшін
+  const { error } = await sb.auth.verifyOtp({ email: otp.email, token: code, type: otp.type });
+  if (error) {
+    recovering = false;
+    return say(msg, 'danger', /expired|invalid/i.test(error.message) ? 'Код қате немесе мерзімі өтіп кетті. Жаңа код сұраңыз.' : errText(error));
+  }
+  otp = null; clearInterval(otpTimer);
+  const { data } = await sb.auth.getSession(); show(data.session?.user);
+});
 $('aResend').addEventListener('click', async () => {
   const email = $('aMail').value.trim(), msg = $('aMsg');
-  if (!email) { msg.className = 'small mb-3 text-danger'; msg.textContent = 'Алдымен email жазыңыз.'; return; }
-  const { error } = await sb.auth.resend({ type: 'signup', email, options: { emailRedirectTo: redirectTo() } });
-  if (error) { msg.className = 'small mb-3 text-danger'; msg.textContent = error.message.includes('rate') || error.status === 429 ? 'Тым жиі сұраныс. Біраз күте тұрып, қайталаңыз.' : 'Қате: ' + error.message; return; }
-  msg.className = 'small mb-3 text-success'; msg.textContent = '✅ Растау сілтемесі қайта жіберілді. Поштаңызды (Спам бумасын да) тексеріңіз.';
-  startCooldown();
+  if (!email) return say(msg, 'danger', 'Алдымен email жазыңыз.');
+  const { error } = await sb.auth.resend({ type: 'signup', email });
+  if (error) return say(msg, 'danger', errText(error));
+  startCooldown(); openOtp(email, 'signup');
 });
 
 // ---------- Кіру / тіркелу ----------
@@ -153,10 +213,10 @@ $('aForgot').addEventListener('click', async e => {
   e.preventDefault();
   const email = $('aMail').value.trim(), msg = $('aMsg');
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { msg.className = 'small mb-3 text-danger'; msg.textContent = 'Алдымен жоғарыдағы өріске email жазыңыз.'; $('aMail').focus(); return; }
-  msg.className = 'small mb-3 text-primary'; msg.textContent = 'Күте тұрыңыз...';
-  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: redirectTo() });
-  if (error) { msg.className = 'small mb-3 text-danger'; msg.textContent = error.status === 429 ? 'Тым жиі сұраныс. Біраз күте тұрып, қайталаңыз.' : 'Қате: ' + error.message; return; }
-  msg.className = 'small mb-3 text-success'; msg.textContent = '✅ Егер бұл email тіркелген болса, құпиясөзді қалпына келтіру сілтемесі жіберілді. Поштаңызды (Спам бумасын да) тексеріңіз.';
+  say(msg, 'primary', 'Күте тұрыңыз...');
+  const { error } = await sb.auth.resetPasswordForEmail(email);
+  if (error) return say(msg, 'danger', errText(error));
+  msg.textContent = ''; openOtp(email, 'recovery');
 });
 $('recForm').addEventListener('submit', async e => {
   e.preventDefault();
@@ -182,16 +242,16 @@ $('authForm').addEventListener('submit', async e => {
   msg.className = 'small mb-3 text-primary'; msg.textContent = 'Күте тұрыңыз...';
   if (mode === 'in') {
     const { error } = await sb.auth.signInWithPassword({ email, password });
-    if (error) { const unconf = /confirm/i.test(error.message); msg.className = 'small mb-3 text-danger'; msg.textContent = unconf ? 'Email әлі расталмаған. Поштаңыздағы сілтемені басыңыз немесе жаңасын сұраңыз.' : 'Email немесе құпиясөз қате.'; if (unconf) showResend(); }
+    if (error) { const unconf = /confirm/i.test(error.message); msg.className = 'small mb-3 text-danger'; msg.textContent = unconf ? 'Email әлі расталмаған. Төмендегі батырма арқылы растау кодын алыңыз.' : 'Email немесе құпиясөз қате.'; if (unconf) { showResend(); } }
   } else {
     const nick = $('aNick').value.trim();
     const bad = !NICK_RE.test(nick) ? 'Никнейм 3–20 таңба болуы керек: әріп, сан, _ . -'
       : !pwOk(password) ? 'Құпиясөз талаптарға сәйкес емес (төмендегі тізімді қараңыз).'
       : password !== $('aPass2').value ? 'Құпиясөздер сәйкес емес.' : '';
     if (bad) { msg.className = 'small mb-3 text-danger'; msg.textContent = bad; return; }
-    const { data, error } = await sb.auth.signUp({ email, password, options: { data: { full_name: $('aName').value.trim(), nickname: nick }, emailRedirectTo: redirectTo() } });
+    const { data, error } = await sb.auth.signUp({ email, password, options: { data: { full_name: $('aName').value.trim(), nickname: nick }, } });
     if (error) { msg.className = 'small mb-3 text-danger'; msg.textContent = error.message; return; }
-    if (!data.session) { msg.className = 'small mb-3 text-success'; msg.textContent = '✅ Тіркелдіңіз! Поштаңызға келген сілтемені басып, email растаңыз да, «Кіру» арқылы кіріңіз.'; showResend(); }
+    if (!data.session) { msg.textContent = ''; openOtp(email, 'signup'); }
   }
 });
 $('logout').onclick = () => sb.auth.signOut();
@@ -205,11 +265,12 @@ sb.auth.getSession().then(({ data }) => show(data.session?.user));
 async function show(user) {
   if (window.renderNav) window.renderNav();
   if (recovering) {   // құпиясөзді қалпына келтіру режимі: тек жаңа құпиясөз формасы
-    $('authBox').classList.add('d-none'); $('dash').classList.add('d-none'); $('recBox').classList.remove('d-none');
+    $('authBox').classList.add('d-none'); $('otpBox').classList.add('d-none'); $('dash').classList.add('d-none'); $('recBox').classList.remove('d-none');
     return;
   }
   if (user && new URLSearchParams(location.search).get('from') === 'kmzh') { location.replace('kmzh.html'); return; }
-  $('authBox').classList.toggle('d-none', !!user);
+  $('otpBox').classList.toggle('d-none', !(otp && !user));
+  $('authBox').classList.toggle('d-none', !!user || !!otp);
   $('dash').classList.toggle('d-none', !user);
   if (!user) return;
   $('tName').textContent = user.user_metadata?.nickname || user.user_metadata?.full_name || user.email;
