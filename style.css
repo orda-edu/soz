@@ -388,3 +388,9 @@ body::after{
 }
 @media(min-width:1200px){#nav{max-width:1140px}}
 @media(min-width:1400px){#nav{max-width:1320px}}
+
+/* ================= Түнгі режим: контурлы және қара түймелер (көрінбей қалмауы үшін) ================= */
+[data-bs-theme=dark] .btn-outline-secondary,[data-bs-theme=dark] .btn-outline-dark{--bs-btn-color:#cbd5e1;--bs-btn-border-color:#475569;--bs-btn-hover-color:#fff;--bs-btn-hover-bg:#334155;--bs-btn-hover-border-color:#64748b;--bs-btn-active-color:#fff;--bs-btn-active-bg:#334155;--bs-btn-active-border-color:#64748b;--bs-btn-disabled-color:#64748b;--bs-btn-disabled-border-color:#334155}
+[data-bs-theme=dark] .btn-dark{--bs-btn-color:#fff;--bs-btn-bg:#2b3956;--bs-btn-border-color:#3b4d75;--bs-btn-hover-color:#fff;--bs-btn-hover-bg:#3b4d75;--bs-btn-hover-border-color:#4a5f8c;--bs-btn-active-bg:#4a5f8c;--bs-btn-active-border-color:#4a5f8c}
+[data-bs-theme=dark] .form-control,[data-bs-theme=dark] .form-select{background-color:#0f172a;border-color:#2b3956}
+[data-bs-theme=dark] .form-control:focus,[data-bs-theme=dark] .form-select:focus{border-color:#3b82f6;box-shadow:0 0 0 .2rem rgba(59,130,246,.25)}
