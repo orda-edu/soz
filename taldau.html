@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="kk"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{if(localStorage.getItem('theme')==='dark')document.documentElement.setAttribute('data-bs-theme','dark')}catch(e){}</script>
+<title>Көркем мәтінді талдау — SözÖrnegi.kz</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css">
+<style>
+.hero{background:linear-gradient(135deg,#142c68,#176b87);color:white;border-radius:24px;padding:clamp(26px,5vw,54px)}
+.panelx{background:var(--bs-body-bg,#fff);border:1px solid var(--bs-border-color,#e2e8f0);border-radius:20px;padding:24px;box-shadow:0 8px 24px #0f172a0b}
+#sourceText{min-height:270px;resize:vertical;line-height:1.9}.metric{border:1px solid var(--bs-border-color,#e2e8f0);border-radius:15px;padding:16px;height:100%}.metric strong{font-size:1.7rem;display:block;color:#1e3a8a}
+.tag{display:inline-block;border-radius:999px;padding:5px 10px;font-size:.8rem;margin:3px;background:#e0f2fe;color:#075985}.item{padding:15px 0;border-bottom:1px solid var(--bs-border-color,#e2e8f0)}.item:last-child{border:0}.chip{font-size:.78rem;font-weight:700;color:#1e3a8a;background:#dbeafe;padding:4px 9px;border-radius:7px}.muted{font-size:.9rem;color:var(--bs-secondary-color)}
+</style></head><body><header id="nav"></header>
+<main class="container py-4 py-lg-5">
+<section class="hero mb-4 mb-lg-5"><span class="badge text-bg-light rounded-pill mb-3">SözÖrnegi.kz · Цифрлық талдау құралы</span><h1 class="display-6 fw-bold mb-3">Көркем мәтінді өздігінен талдау</h1><p class="fs-5 mb-0" style="max-width:760px;opacity:.92">Мәтінді енгізіңіз — көркемдегіш құралдардың ықтимал белгілерін, қайталануларды, эмоциялық реңкті және сөз қолданысын зерттеңіз.</p></section>
+<div class="row g-4"><div class="col-lg-7"><section class="panelx h-100">
+<div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-3"><h2 class="h4 fw-bold mb-0"><i class="bi bi-pencil-square me-2 text-primary"></i>Мәтін енгізу</h2><button class="btn btn-sm btn-outline-secondary rounded-pill" id="exampleBtn">Үлгі мәтін</button></div>
+<label for="sourceText" class="form-label fw-semibold">Талдағыңыз келетін көркем мәтін</label><textarea id="sourceText" class="form-control" placeholder="Мәтінді осында көшіріп қойыңыз..."></textarea>
+<div class="d-flex justify-content-between muted mt-2"><span id="charCount">0 таңба</span><span id="wordCount">0 сөз</span></div>
+<div class="d-flex gap-2 flex-wrap mt-4"><button class="btn btn-primary rounded-pill px-4" id="analyzeBtn"><i class="bi bi-magic me-2"></i>Мәтінді талдау</button><button class="btn btn-outline-secondary rounded-pill px-4" id="clearBtn">Тазалау</button></div>
+<p class="muted mt-3 mb-0"><i class="bi bi-shield-check me-1"></i>Мәтін браузерде талданады және серверге жіберілмейді.</p></section></div>
+<div class="col-lg-5"><section class="panelx h-100"><h2 class="h4 fw-bold mb-3"><i class="bi bi-sliders me-2 text-primary"></i>Талдау бағыттары</h2>
+<div class="d-grid gap-3"><div class="d-flex gap-3"><i class="bi bi-chat-quote fs-4 text-primary"></i><div><b>Көркемдегіш құралдар</b><div class="muted">Теңеу, эпитет, метафора болуы мүмкін тіркестер</div></div></div>
+<div class="d-flex gap-3"><i class="bi bi-arrow-repeat fs-4 text-success"></i><div><b>Қайталау мен синтаксис</b><div class="muted">Қайталанған сөздер, сұраулы және лепті сөйлемдер</div></div></div>
+<div class="d-flex gap-3"><i class="bi bi-heart-pulse fs-4 text-warning"></i><div><b>Эмоциялық реңк</b><div class="muted">Сезім білдіретін сөздер мен тыныс белгілері</div></div></div>
+<div class="d-flex gap-3"><i class="bi bi-bar-chart fs-4 text-info"></i><div><b>Сандық көрсеткіштер</b><div class="muted">Сөз саны, бірегей сөздер және жиі сөздер</div></div></div></div>
+<hr class="my-4"><div class="muted">Ескерту: нәтижелер тілдік ережелер мен сөздікке негізделген болжам. Әр мысалды контекст арқылы тексеріңіз; бұл құрал мұғалімнің немесе зерттеушінің талдауын алмастырмайды.</div></section></div></div>
+<section id="results" class="mt-4 mt-lg-5" aria-live="polite"><div class="panelx text-center py-5"><i class="bi bi-file-earmark-text display-4 text-primary"></i><h2 class="h4 fw-bold mt-3">Талдау нәтижесі осында көрсетіледі</h2><p class="text-secondary mb-0">Мәтін енгізіп, «Мәтінді талдау» батырмасын басыңыз.</p></div></section>
+</main><script src="nav.js"></script><script>
+(()=>{const $=id=>document.getElementById(id),ta=$('sourceText');
+const sample='Күздің алтын жапырақтары жерге баяу қонды. Сары жапырақтар желмен билеп, табиғаттың мұңды әнін тыңдатқандай. Аспан мақтадай ақ бұлттарға толды. Мен туған жерімді шексіз сүйемін! Қоңыр кеш, қоңыр дала, қоңыр самал көңілге тыныштық сыйлады.';
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const words=s=>s.toLocaleLowerCase('kk-KZ').match(/[a-zа-яёәіңғүұқөһ]+(?:-[a-zа-яёәіңғүұқөһ]+)*/giu)||[];
+function counts(){ $('charCount').textContent=ta.value.length+' таңба';$('wordCount').textContent=words(ta.value).length+' сөз';}
+ta.addEventListener('input',counts);$('exampleBtn').onclick=()=>{ta.value=sample;counts()};$('clearBtn').onclick=()=>{ta.value='';counts();ta.focus()};
+function analyze(){
+ const s=ta.value.trim();if(!s){$('results').innerHTML='<div class="alert alert-warning">Алдымен талдайтын мәтінді енгізіңіз.</div>';return}
+ const w=words(s),unique=new Set(w),sent=s.split(/[.!?…]+/).filter(x=>x.trim()).length,found=[];
+ const add=(type,re,why)=>{let m;re.lastIndex=0;while((m=re.exec(s))!==null){found.push({type,phrase:m[0].trim(),index:m.index,why});if(!m[0].length)re.lastIndex++}};
+ add('Теңеу',/\b[\p{L}]+(?:дай|дей|тай|тей|ша|ше)\b/giu,'Бұл қосымша теңеу мәнін білдіруі мүмкін; сөздің грамматикалық қызметін тексеріңіз.');
+ add('Теңеу',/\b[\p{L}]+\s+(?:сияқты|секілді|тәрізді|бейне|іспетті)\b/giu,'Салыстыру мәнін білдіретін тіркес болуы ықтимал.');
+ add('Эпитет',/\b(?:алтын|күміс|қоңыр|мұңды|сұлу|әсем|мөлдір|асыл|жарқын|мамық|асқар)\s+[\p{L}-]+\b/giu,'Заттың бейнелі белгісін білдіретін анықтауыш болуы ықтимал.');
+ add('Метафора болуы мүмкін',/\b(?:өмір|жүрек|үміт|арман|табиғат|дала|жел|түн|таң|күн|ай|жапырақ)\b.{0,24}\b(?:әні|үні|жылады|күлді|сөйлейді|оянады|құшағы|жүрегі|билейді)\b/giu,'Ауыспалы мағына немесе кейіптеу болуы мүмкін.');
+ add('Сұраулы сөйлем',/[^.!?]*\?/g,'Сұраулы сөйлем табылды; риторикалық қызметін мағынасына қарап анықтаңыз.');
+ add('Лепті сөйлем',/[^.!?]*!/g,'Лепті сөйлем эмоциялық екпін беруі мүмкін.');
+ add('Қайталау',/\b([\p{L}]{3,})\s+\1\b/giu,'Бір сөз қатар қайталанған.');
+ found.sort((a,b)=>a.index-b.index);
+ const stop=new Set('және мен де да та те бұл сол бір ол олар біз сіз сен үшін туралы ғана бірақ еді екен емес бар жоқ өте сияқты бойынша дейін'.split(' ')),freq={};
+ w.forEach(x=>{if(x.length>2&&!stop.has(x))freq[x]=(freq[x]||0)+1});
+ const top=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,8);
+ const low=s.toLocaleLowerCase('kk-KZ'),pos=['сүйемін','қуаныш','бақыт','үміт','сұлу','әсем','жақсы','шаттық','нұр','мейірім','жарқын'].reduce((n,x)=>n+(low.split(x).length-1),0),neg=['мұң','қайғы','жыла','қасірет','қараңғы','үрей','қорқыныш','өкініш','жалғыз','суық'].reduce((n,x)=>n+(low.split(x).length-1),0);
+ const mood=pos>neg?'Жағымды реңк басым болуы мүмкін':neg>pos?'Мұңды/жағымсыз реңк басым болуы мүмкін':'Бейтарап немесе анықталмаған';
+ const grouped={};found.forEach(x=>grouped[x.type]=(grouped[x.type]||0)+1);
+ const examples=found.length?found.map(p=>`<div class="item"><div class="d-flex justify-content-between flex-wrap gap-2"><span class="chip">${esc(p.type)}</span><span class="muted">мәтіндегі орны: ${p.index+1}</span></div><div class="fw-semibold mt-2">${esc(p.phrase)}</div><div class="muted mt-1">${esc(p.why)}</div></div>`).join(''):'<p class="text-secondary">Бұл ережелер бойынша мысал табылмады. Бұл көркемдегіш құралдар жоқ дегенді білдірмейді.</p>';
+ $('results').innerHTML=`<div class="d-flex justify-content-between align-items-end gap-3 flex-wrap mb-3"><div><div class="text-primary fw-bold small text-uppercase">Нәтиже</div><h2 class="h3 fw-bold mb-0">Мәтіннің қысқаша талдауы</h2></div><button class="btn btn-outline-primary rounded-pill" id="copyReport"><i class="bi bi-clipboard me-1"></i>Қорытындыны көшіру</button></div>
+ <div class="row g-3 mb-4">${[['Сөз саны',w.length],['Бірегей сөз',unique.size],['Сөйлем саны',sent],['Ықтимал белгілер',found.length]].map(([a,b])=>`<div class="col-6 col-xl-3"><div class="metric"><span class="muted">${a}</span><strong>${b}</strong></div></div>`).join('')}
+ <div class="col-lg-6"><section class="panelx h-100"><h3 class="h5 fw-bold mb-3"><i class="bi bi-stars text-warning me-2"></i>Стилистикалық белгілер</h3>${Object.entries(grouped).map(([k,v])=>`<span class="tag">${esc(k)} · ${v}</span>`).join('')||'<p class="text-secondary">Автоматты ережелер бойынша белгі анықталмады.</p>'}<hr><h4 class="h6 fw-bold">Эмоциялық реңк</h4><div class="fw-semibold">${mood}</div><p class="muted mt-1 mb-0">Бұл — сөздікке негізделген болжам, толық семантикалық талдау емес.</p></section></div>
+ <div class="col-lg-6"><section class="panelx h-100"><h3 class="h5 fw-bold mb-3"><i class="bi bi-bar-chart-line text-primary me-2"></i>Жиі қолданылған сөздер</h3>${top.map(([k,v])=>`<div class="d-flex align-items-center gap-3 mb-2"><div style="min-width:90px" class="fw-semibold">${esc(k)}</div><div class="progress flex-grow-1" style="height:9px"><div class="progress-bar" style="width:${Math.max(6,v/Math.max(...top.map(x=>x[1]))*100)}%"></div></div><span class="muted">${v}</span></div>`).join('')||'<p class="text-secondary">Сөздер жеткіліксіз.</p>'}</section></div>
+ <div class="col-12"><section class="panelx"><h3 class="h5 fw-bold mb-2"><i class="bi bi-search-heart text-success me-2"></i>Табылған ықтимал мысалдар</h3><p class="muted">Әр белгі автоматты түрде ұсынылады. Контекст арқылы тексеріңіз.</p>${examples}</section></div>
+ <div class="col-12"><section class="panelx"><h3 class="h5 fw-bold mb-3"><i class="bi bi-journal-check text-primary me-2"></i>Өзіндік талдауға арналған сұрақтар</h3><ol class="mb-0"><li class="mb-2">Мәтіндегі ең әсерлі сөз немесе тіркес қайсы? Неліктен?</li><li class="mb-2">Белгіленген көркемдегіш құрал мәтінге қандай көркемдік қызмет атқарып тұр?</li><li class="mb-2">Қайталау мәтіннің ырғағы мен негізгі ойын қалай күшейтеді?</li><li>Мәтіннің көңіл күйін қандай тілдік дәлелдер арқылы түсіндіруге болады?</li></ol></section></div></div>`;
+ const report=`КӨРКЕМ МӘТІН ТАЛДАУЫ\nСөз саны: ${w.length}\nБірегей сөздер: ${unique.size}\nСөйлем саны: ${sent}\nЭмоциялық реңк: ${mood}\nЫқтимал белгілер:\n${found.map(p=>'- '+p.type+': '+p.phrase).join('\n')||'Нақты мысал табылмады.'}\nЕскерту: нәтижені контекст арқылы тексеру қажет.`;
+ $('copyReport').onclick=async()=>{try{await navigator.clipboard.writeText(report);$('copyReport').textContent='Көшірілді'}catch(e){const a=document.createElement('textarea');a.value=report;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();$('copyReport').textContent='Көшірілді'}};
+ $('results').scrollIntoView({behavior:'smooth',block:'start'});
+}
+$('analyzeBtn').addEventListener('click',analyze);counts();
+})();
+</script></body></html>
