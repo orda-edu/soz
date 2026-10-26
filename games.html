@@ -15,6 +15,8 @@
   .opt{display:block;width:100%;text-align:left;background:#fff;border:2px solid #e2e8f0;border-radius:12px;padding:14px 18px;margin-bottom:10px;transition:.15s}
   .opt:hover:not(:disabled){border-color:#3b82f6;background:#eff6ff}
   .opt.ok{background:#d1fae5;border-color:#10b981}.opt.bad{background:#fee2e2;border-color:#ef4444}
+  .opt.picked{background:#dbeafe;border-color:#2563eb}
+  [data-bs-theme=dark] .opt.picked{background:#1b2c52;border-color:#3b82f6}
   .mitem{background:#fff;border:2px solid #e2e8f0;border-radius:12px;padding:12px 16px;margin-bottom:10px;cursor:pointer;transition:.15s;width:100%;text-align:left}
   .mitem:hover{border-color:#3b82f6}.mitem.sel{border-color:#2563eb;background:#dbeafe}
   .mitem.done{background:#d1fae5;border-color:#10b981;cursor:default}.mitem.bad{background:#fee2e2;border-color:#ef4444}
@@ -34,9 +36,11 @@ const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { cons
 const title = (t, c) => `<h2 class="text-center fw-bold mb-4" style="color:${c || '#1e3a8a'}">${t}</h2>`;
 let cache = null, Q = null, M = null, student = null, cur = null;
 try { student = JSON.parse(localStorage.getItem('student') || 'null'); } catch (e) {}
-const sbar = () => student
-  ? `<div class="panel p-3 mb-4 mx-auto d-flex justify-content-between align-items-center flex-wrap gap-2" style="max-width:640px"><span><i class="bi bi-person-check-fill text-success me-2"></i>Оқушы: <b>${esc(student.name)}</b> — нәтижелер мұғалімге сақталады</span><button class="btn btn-sm btn-outline-secondary rounded-pill" data-act="slogout">Шығу</button></div>`
-  : `<div class="panel p-3 mb-4 mx-auto" style="max-width:640px"><div class="fw-bold mb-2"><i class="bi bi-key-fill me-2 text-primary"></i>Оқушы коды (мұғалім береді)</div><div class="d-flex gap-2 flex-wrap"><input id="sCode" class="form-control code-in" style="max-width:240px" placeholder="Мысалы: K7M2QX" autocomplete="off"><button class="btn btn-primary rounded-pill px-4" data-act="slogin">Кіру</button></div><div id="sErr" class="small text-danger mt-1"></div><div class="small text-muted mt-1">Кодсыз да ойнауға болады, бірақ нәтиже сақталмайды.</div></div>`;
+const W = 520; // барлық ойын панельдерінің ортақ ені
+const sbar = (w = W) => student
+  ? `<div class="panel p-3 mb-3 mx-auto d-flex justify-content-between align-items-center flex-wrap gap-2" style="max-width:${w}px"><span><i class="bi bi-person-check-fill text-success me-2"></i>Оқушы: <b>${esc(student.name)}</b><br><small class="text-muted">Нәтижелер мұғалімге сақталады</small></span><button class="btn btn-sm btn-outline-secondary rounded-pill" data-act="slogout">Шығу</button></div>`
+  : `<div class="panel p-3 p-md-4 mb-3 mx-auto" style="max-width:${w}px"><div class="fw-bold mb-3"><i class="bi bi-key-fill me-2 text-primary"></i>Оқушы коды (мұғалім береді)</div><div class="d-flex gap-2"><input id="sCode" class="form-control code-in flex-grow-1" style="min-width:0" placeholder="Мысалы: K7M2QX" autocomplete="off"><button class="btn btn-primary rounded-pill px-4 flex-shrink-0" data-act="slogin">Кіру</button></div><div id="sErr" class="small text-danger mt-1"></div><div class="small text-muted mt-2">Кодсыз да ойнауға болады, бірақ нәтиже сақталмайды.</div></div>`;
+const backBar = `<div class="mb-3"><button class="btn btn-sm btn-outline-secondary rounded-pill px-3" data-act="home"><i class="bi bi-arrow-left me-1"></i>Ойындар тізімі</button></div>`;
 async function slogin() {
   const code = document.getElementById('sCode').value.trim().toUpperCase();
   if (!code) return;
@@ -66,6 +70,7 @@ const note = m => `<div class="panel p-5 text-center"><i class="bi bi-info-circl
 
 // ---------- Басты ----------
 function home() {
+  Q = M = A = null;
   const card = (ic, col, t, d, act) => `<div class="col-sm-6 col-lg-3"><div class="game-card panel h-100 text-center p-4">
     <i class="bi ${ic} text-${col}" style="font-size:4rem"></i><h4 class="fw-bold mt-3">${t}</h4>
     <p class="text-muted my-3">${d}</p><button class="btn btn-outline-${col} w-100 rounded-pill fw-bold" data-act="${act}">ОЙНАУ <i class="bi bi-play-fill"></i></button></div></div>`;
@@ -87,13 +92,13 @@ async function quizSetup() {
   let ws; try { ws = await getWords(); } catch (e) { app.innerHTML = note('Қате: ' + esc(e.message)); return; }
   const works = [...new Set(ws.map(w => w.work).filter(Boolean))];
   cur = quizSetup;
-  app.innerHTML = title('Тест параметрлері') + sbar() + `<div class="panel p-4 p-md-5" style="max-width:560px;margin:auto">
+  app.innerHTML = title('Тест параметрлері') + sbar() + `<div class="panel p-4 p-md-5" style="max-width:${W}px;margin:auto">
     <label class="form-label fw-bold">Шығарма:</label>
     <select id="qWork" class="form-select form-select-lg mb-4"><option value="">📚 Барлық шығармалар</option>${works.map(w => `<option>${esc(w)}</option>`).join('')}</select>
     <label class="form-label fw-bold">Сұрақ саны:</label>
     <select id="qCount" class="form-select form-select-lg mb-4"><option>5</option><option selected>10</option><option>15</option><option>20</option></select>
     <button class="btn btn-primary btn-lg w-100 fw-bold" data-act="quizStart">ТЕСТТІ БАСТАУ</button>
-    <button class="btn btn-outline-secondary w-100 mt-2" data-act="home">Артқа</button></div>`;
+    <button class="btn btn-outline-secondary w-100 mt-2" data-act="home"><i class="bi bi-arrow-left me-1"></i>Ойындар тізімі</button></div>`;
 }
 function quizStart() {
   const work = document.getElementById('qWork').value, n = +document.getElementById('qCount').value;
@@ -107,7 +112,7 @@ function quizStart() {
 }
 function quizQ() {
   const it = Q.items[Q.i], pct = Q.i / Q.items.length * 100;
-  app.innerHTML = `<div class="progress mb-4" style="height:8px"><div class="progress-bar" style="width:${pct}%"></div></div>
+  app.innerHTML = backBar + `<div class="progress mb-4" style="height:8px"><div class="progress-bar" style="width:${pct}%"></div></div>
     <div class="panel p-4 p-md-5"><div class="text-muted mb-2">Сұрақ ${Q.i + 1}/${Q.items.length}</div>
     <h4 class="mb-4">${it.html || `<b>"${esc(it.q)}"</b> сөзінің мағынасы қайсы?`}</h4>
     ${it.options.map((o, k) => `<button class="opt" data-act="pick" data-k="${k}">${esc(o)}</button>`).join('')}</div>`;
@@ -116,9 +121,9 @@ function quizPick(k) {
   const it = Q.items[Q.i]; it.user = it.options[k];
   document.querySelectorAll('.opt').forEach((b, j) => {
     b.disabled = true;
-    if (it.options[j] === it.correct) b.classList.add('ok'); else if (j === k) b.classList.add('bad');
+    if (j === k) b.classList.add('picked');
   });
-  setTimeout(() => { Q.i++; Q.i < Q.items.length ? quizQ() : quizResult(); }, 900);
+  const q = Q; setTimeout(() => { if (Q !== q) return; Q.i++; Q.i < Q.items.length ? quizQ() : quizResult(); }, 450);
 }
 function quizResult() {
   const ok = Q.items.filter(i => i.user === i.correct).length, t = Q.items.length, good = ok >= t / 2;
@@ -139,11 +144,11 @@ async function matchSetup() {
   app.innerHTML = '<div class="text-center text-muted">Жүктелуде...</div>';
   try { await getWords(); } catch (e) { app.innerHTML = note('Қате: ' + esc(e.message)); return; }
   cur = matchSetup;
-  app.innerHTML = title('Сәйкестендіру ойыны', '#198754') + sbar() + `<div class="panel p-4 p-md-5" style="max-width:480px;margin:auto">
+  app.innerHTML = title('Сәйкестендіру ойыны', '#198754') + sbar() + `<div class="panel p-4 p-md-5" style="max-width:${W}px;margin:auto">
     <label class="form-label fw-bold">Жұп саны:</label>
     <select id="mCount" class="form-select form-select-lg mb-4"><option>5</option><option>8</option><option>10</option></select>
     <button class="btn btn-success btn-lg w-100 fw-bold" data-act="matchStart">Бастау</button>
-    <button class="btn btn-outline-secondary w-100 mt-2" data-act="home">Артқа</button></div>`;
+    <button class="btn btn-outline-secondary w-100 mt-2" data-act="home"><i class="bi bi-arrow-left me-1"></i>Ойындар тізімі</button></div>`;
 }
 function matchStart() {
   const n = +document.getElementById('mCount').value;
@@ -155,7 +160,7 @@ function matchStart() {
 }
 function matchDraw() {
   const col = (list, side) => list.map(p => `<button class="mitem" data-act="msel" data-side="${side}" data-id="${p.id}">${esc(side === 'w' ? p.word : p.meaning)}</button>`).join('');
-  app.innerHTML = title('Сөзді мағынасымен сәйкестендіріңіз', '#198754') + `<div class="row"><div class="col-5 col-md-5"><h6 class="text-center text-success">СӨЗДЕР</h6>${col(M.left, 'w')}</div>
+  app.innerHTML = backBar + title('Сөзді мағынасымен сәйкестендіріңіз', '#198754') + `<div class="row"><div class="col-5 col-md-5"><h6 class="text-center text-success">СӨЗДЕР</h6>${col(M.left, 'w')}</div>
     <div class="col-7 col-md-7"><h6 class="text-center text-success">МАҒЫНАЛАР</h6>${col(M.right, 'm')}</div></div>
     <h5 class="text-center fw-bold mt-3" id="mStat">Табылды: 0/${M.pool.length}</h5>`;
 }
@@ -170,11 +175,11 @@ function matchSel(btn) {
     [a, b].forEach(x => { x.classList.remove('sel'); x.classList.add('done'); });
     M.found++; document.getElementById('mStat').textContent = `Дұрыс! ✅ ${M.found}/${M.pool.length}`;
     M.w = M.m = null;
-    if (M.found === M.pool.length) setTimeout(matchResult, 600);
+    if (M.found === M.pool.length) { const m = M; setTimeout(() => { if (M === m) matchResult(); }, 600); }
   } else {
     M.miss++; M.lock = true; [a, b].forEach(x => x.classList.add('bad'));
     document.getElementById('mStat').textContent = 'Қате! ❌';
-    setTimeout(() => { [a, b].forEach(x => x.classList.remove('bad', 'sel')); M.w = M.m = null; M.lock = false; }, 800);
+    const m = M; setTimeout(() => { if (M !== m) return; [a, b].forEach(x => x.classList.remove('bad', 'sel')); M.w = M.m = null; M.lock = false; }, 800);
   }
 }
 function matchResult() {
@@ -197,19 +202,32 @@ async function picture() {
     app.innerHTML = note('Суретті тап ойынына әзірге суреттер қосылмаған. Суреттер базаға қосылған соң ойын осы жерде шығады.'); return;
   }
   window.__pics = data; cur = picture;
-  app.innerHTML = title('Суретті тап', '#b45309') + sbar() + data.map((p, i) => `<div class="panel p-4 mb-4 text-center">
+  app.innerHTML = backBar + title('Суретті тап', '#b45309') + sbar(640) + data.map((p, i) => `<div class="panel p-4 mb-4 text-center">
     <img src="${esc(p.image_url)}" class="img-fluid rounded mb-3" style="max-height:300px" alt="">
     <h5>Бұл не?</h5><input class="form-control w-75 mx-auto mt-2" id="pa${i}" placeholder="Жауапты жазыңыз...">
-    <button class="btn btn-warning text-white mt-3" data-act="pcheck" data-i="${i}">Тексеру</button>
+    <button class="btn btn-warning text-white mt-3" data-act="pcheck" data-i="${i}">Жауапты сақтау</button>
     <p class="mt-2 fw-bold mb-0" id="pr${i}"></p></div>`).join('') +
-    '<div class="text-center"><button class="btn btn-outline-secondary rounded-pill px-4" data-act="home">Ойындар тізімі</button></div>';
+    '<div class="text-center"><button class="btn btn-warning text-white rounded-pill px-4 me-2" data-act="presult">Нәтижені көру</button><button class="btn btn-outline-secondary rounded-pill px-4" data-act="home">Ойындар тізімі</button></div>';
 }
 function pcheck(i) {
-  const c = window.__pics[i].correct_answer || '', v = document.getElementById('pa' + i).value.trim().toLowerCase(), r = document.getElementById('pr' + i);
-  const ok = v === c.trim().toLowerCase();
-  r.textContent = ok ? 'Дұрыс! ✅' : 'Қате! Дұрыс жауап: ' + c; r.className = 'mt-2 fw-bold mb-0 text-' + (ok ? 'success' : 'danger');
+  const r = document.getElementById('pr' + i);
+  if (!document.getElementById('pa' + i).value.trim()) { r.textContent = ''; return; }
+  r.textContent = 'Жауап қабылданды ✔'; r.className = 'mt-2 fw-bold mb-0 text-primary';
 }
-
+function presult() {
+  const pics = window.__pics, ans = pics.map((p, i) => document.getElementById('pa' + i).value.trim());
+  const ok = pics.filter((p, i) => ans[i].toLowerCase() === String(p.correct_answer || '').trim().toLowerCase()).length, t = pics.length, good = ok >= t / 2;
+  saveResult('Суретті тап', ok, t);
+  app.innerHTML = `<div class="page-hero p-5 text-center mb-4" style="background:${good ? 'linear-gradient(135deg,#198754,#20c997)' : 'linear-gradient(135deg,#dc3545,#ff6b6b)'}">
+    <h3 class="fw-bold">${ok === t ? '🏆 Керемет!' : good ? '👏 Жақсы нәтиже!' : '😔 Келесі жолы сәттілік!'}</h3>
+    <div class="display-3 fw-bold">${ok} <span class="fs-4">/ ${t}</span></div></div>
+    <h5 class="fw-bold mb-3">Жауаптарды талдау</h5>
+    ${pics.map((p, i) => { const c = String(p.correct_answer || ''), y = ans[i].toLowerCase() === c.trim().toLowerCase();
+      return `<div class="panel p-3 mb-2 d-flex gap-3 align-items-center"><img src="${esc(p.image_url)}" alt="" style="width:72px;height:72px;object-fit:cover;border-radius:10px">
+      <div>${y ? `<span class="badge bg-success text-wrap text-start">✓ ${esc(ans[i])}</span>` : `<span class="badge bg-danger text-wrap text-start">✗ Сіз: ${esc(ans[i] || '—')}</span><br><span class="badge bg-success mt-1 text-wrap text-start">✓ Дұрысы: ${esc(c)}</span>`}</div></div>`; }).join('')}
+    <div class="text-center small text-muted mt-3" id="saveNote"></div><div class="text-center mt-3"><button class="btn btn-warning text-white rounded-pill px-4 me-2" data-act="picture">Қайта ойнау</button>
+    <button class="btn btn-outline-secondary rounded-pill px-4" data-act="home">Ойындар тізімі</button></div>`;
+}
 
 // ---------- Жаңа ойындар: жалпы параметр беті ----------
 const GAMES = {
@@ -222,11 +240,11 @@ async function gameSetup(k, setup) {
   app.innerHTML = '<div class="text-center text-muted">Жүктелуде...</div>';
   try { await getWords(); } catch (e) { app.innerHTML = note('Қате: ' + esc(e.message)); return; }
   const g = GAMES[k]; cur = setup;
-  app.innerHTML = title(g.t, g.c) + sbar() + `<div class="panel p-4 p-md-5" style="max-width:480px;margin:auto">
+  app.innerHTML = title(g.t, g.c) + sbar() + `<div class="panel p-4 p-md-5" style="max-width:${W}px;margin:auto">
     <label class="form-label fw-bold">Сұрақ саны:</label>
     <select id="gCount" class="form-select form-select-lg mb-4"><option>5</option><option selected>10</option><option>15</option><option>20</option></select>
     <button class="btn btn-${g.btn} btn-lg w-100 fw-bold" data-act="${g.start}">Бастау</button>
-    <button class="btn btn-outline-secondary w-100 mt-2" data-act="home">Артқа</button></div>`;
+    <button class="btn btn-outline-secondary w-100 mt-2" data-act="home"><i class="bi bi-arrow-left me-1"></i>Ойындар тізімі</button></div>`;
 }
 const anaSetup = () => gameSetup('ana', anaSetup), authSetup = () => gameSetup('auth', authSetup), tfSetup = () => gameSetup('tf', tfSetup), workSetup = () => gameSetup('work', workSetup);
 const gCount = () => +document.getElementById('gCount').value;
@@ -287,24 +305,20 @@ function anaStart() {
 }
 function anaQ() {
   const it = A.items[A.i], pct = A.i / A.items.length * 100;
-  app.innerHTML = `<div class="progress mb-4" style="height:8px"><div class="progress-bar bg-danger" style="width:${pct}%"></div></div>
+  app.innerHTML = backBar + `<div class="progress mb-4" style="height:8px"><div class="progress-bar bg-danger" style="width:${pct}%"></div></div>
     <div class="panel p-4 p-md-5 text-center"><div class="text-muted mb-2">Сұрақ ${A.i + 1}/${A.items.length}</div>
     <div class="mb-3">${scramble(it.word).map(c => `<span class="badge text-bg-danger fs-3 m-1 px-3 py-2 text-uppercase">${esc(c)}</span>`).join('')}</div>
     <p class="text-muted">Мағынасы: <i>${esc(it.meaning)}</i></p>
     <input id="anaIn" class="form-control form-control-lg text-center mx-auto mb-3" style="max-width:360px" placeholder="Сөзді жазыңыз" autocomplete="off" autocapitalize="none">
-    <div id="anaMsg" class="fw-bold mb-3" style="min-height:1.5em"></div>
-    <button class="btn btn-danger rounded-pill px-4" id="anaBtn" data-act="anaCheck">Тексеру</button></div>`;
+    <button class="btn btn-danger rounded-pill px-4" id="anaBtn" data-act="anaCheck">${A.i + 1 < A.items.length ? 'Келесі' : 'Нәтижені көру'}</button></div>`;
   document.getElementById('anaIn').focus();
 }
 function anaCheck() {
-  const it = A.items[A.i], inp = document.getElementById('anaIn'), msg = document.getElementById('anaMsg'), btn = document.getElementById('anaBtn');
-  if (btn.dataset.next) { A.i++; A.i < A.items.length ? anaQ() : anaResult(); return; }
-  if (!inp.value.trim()) return;
-  it.user = inp.value.trim(); const ok = lc(it.user) === lc(it.word);
-  if (ok) A.ok++;
-  inp.disabled = true; msg.className = 'fw-bold mb-3 text-' + (ok ? 'success' : 'danger');
-  msg.textContent = ok ? 'Дұрыс! ✅' : 'Қате ❌ Дұрыс жауап: ' + it.word;
-  btn.dataset.next = '1'; btn.textContent = A.i + 1 < A.items.length ? 'Келесі' : 'Нәтиже'; btn.focus();
+  const it = A.items[A.i], inp = document.getElementById('anaIn');
+  if (!inp.value.trim()) { inp.focus(); return; }
+  it.user = inp.value.trim();
+  if (lc(it.user) === lc(it.word)) A.ok++;
+  A.i++; A.i < A.items.length ? anaQ() : anaResult();
 }
 function anaResult() {
   const t = A.items.length, good = A.ok >= t / 2;
@@ -329,7 +343,7 @@ async function cardsStart() {
 }
 function cardDraw() {
   const it = C.items[C.i];
-  app.innerHTML = title('Жаттау карточкалары', '#212529') + `<div class="mx-auto" style="max-width:560px">
+  app.innerHTML = title('Жаттау карточкалары', 'var(--bs-body-color)') + `<div class="mx-auto" style="max-width:560px">
     <div class="small text-muted text-center mb-2">${C.i + 1} / ${C.items.length} · картаны басып аударыңыз</div>
     <div class="panel p-4 p-md-5 text-center d-flex flex-column justify-content-center" style="min-height:240px;cursor:pointer" data-act="cflip">
       ${C.flip ? `<div class="fs-5">${esc(it.meaning)}</div>${it.author ? `<div class="small text-muted mt-3">${esc(it.author)}${it.work ? ' · ' + esc(it.work) : ''}</div>` : ''}`
@@ -344,7 +358,7 @@ const cprev = () => { if (C.i > 0) { C.i--; C.flip = false; cardDraw(); } };
 const cnext = () => { C.i = C.i + 1 < C.items.length ? C.i + 1 : 0; C.flip = false; cardDraw(); };
 
 // ---------- Басқару ----------
-const acts = { slogin, slogout, home, quizSetup, quizStart, matchSetup, matchStart, picture, anaSetup, anaStart, anaCheck, authSetup, authStart, workSetup, workStart, tfSetup, tfStart, cardsStart, cflip, cprev, cnext };
+const acts = { slogin, slogout, home, quizSetup, quizStart, matchSetup, matchStart, picture, presult, anaSetup, anaStart, anaCheck, authSetup, authStart, workSetup, workStart, tfSetup, tfStart, cardsStart, cflip, cprev, cnext };
 app.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b) return;
   const a = b.dataset.act;
