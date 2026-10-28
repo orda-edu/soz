@@ -1,6 +1,8 @@
 (function () {
   const KEY = 'sb-jkvjtjjimqvppvogotiu-auth-token'; // Supabase сессиясы
+  const KMZH_URL = 'https://mavlenai.kz/p/5-sabaq-durysy'; // ҚМЖ сыртқы сілтемесі
   const logged = () => { try { return !!localStorage.getItem(KEY); } catch (e) { return false; } };
+  const ext = href => href.startsWith('http') ? ' target="_blank" rel="noopener"' : '';
 
   // ---------- Түнгі режим ----------
   const root = document.documentElement;
@@ -25,10 +27,10 @@
     const auth = logged();
     const current = location.pathname.split('/').pop() || 'index.html';
     const links = [['index.html', 'Сөз іздеу'], ['taldau.html', 'Мәтін талдау'], ['games.html', 'Ойындар'], ['videos.html', 'Бейнесабақтар']];
-    if (auth) links.push(['kmzh.html', 'ҚМЖ']); // тек мұғалімге көрінеді
+    links.push([KMZH_URL, 'ҚМЖ']); // барлығына көрінеді
     links.push(['about.html', 'Жоба туралы']);
     const tabs = [['index.html', 'bi-search', 'Іздеу'], ['taldau.html', 'bi-file-earmark-text', 'Талдау'], ['games.html', 'bi-controller', 'Ойындар'], ['videos.html', 'bi-play-circle-fill', 'Бейне']];
-    if (auth) tabs.push(['kmzh.html', 'bi-journal-text', 'ҚМЖ']);
+    tabs.push([KMZH_URL, 'bi-journal-text', 'ҚМЖ']); // барлығына көрінеді
     tabs.push(['about.html', 'bi-info-circle-fill', 'Жоба']);
     tabs.push(['teacher.html', auth ? 'bi-person-circle' : 'bi-box-arrow-in-right', auth ? 'Кабинет' : 'Кіру']);
     host.innerHTML = `
@@ -41,7 +43,7 @@
         </button>
         <div class="collapse navbar-collapse justify-content-end" id="navMenu">
           <ul class="navbar-nav align-items-lg-center">
-            ${links.map(([href, t]) => `<li class="nav-item"><a class="nav-link ${href === current ? 'active' : ''}" href="${href}">${t}</a></li>`).join('')}
+            ${links.map(([href, t]) => `<li class="nav-item"><a class="nav-link ${href === current ? 'active' : ''}" href="${href}"${ext(href)}>${t}</a></li>`).join('')}
             <li class="nav-item ms-lg-2 d-none d-lg-block">${themeBtn()}</li>
             <li class="nav-item ms-lg-2 mt-2 mt-lg-0"><a class="nav-login ${current === 'teacher.html' ? 'active' : ''}" href="teacher.html"><i class="bi ${auth ? 'bi-person-circle' : 'bi-box-arrow-in-right'} me-1"></i>${auth ? 'Кабинет' : 'Кіру'}</a></li>
           </ul>
@@ -49,7 +51,7 @@
       </div>
     </nav>
     <nav class="bottom-nav d-lg-none" aria-label="Негізгі мәзір">
-      ${tabs.map(([href, ic, t]) => `<a class="bn-item ${href === current ? 'active' : ''}" href="${href}"><i class="bi ${ic}"></i><span>${t}</span></a>`).join('')}
+      ${tabs.map(([href, ic, t]) => `<a class="bn-item ${href === current ? 'active' : ''}" href="${href}"${ext(href)}><i class="bi ${ic}"></i><span>${t}</span></a>`).join('')}
     </nav>`;
   }
 
@@ -69,7 +71,8 @@
           <div class="col-12 col-md-3">
             <h6>Бөлімдер</h6>
             <ul class="f-links">
-              <li><a href="index.html">Сөз іздеу</a></li>\n              <li><a href="taldau.html">Мәтін талдау</a></li>
+              <li><a href="index.html">Сөз іздеу</a></li>
+              <li><a href="taldau.html">Мәтін талдау</a></li>
               <li><a href="games.html">Ойындар</a></li>
               <li><a href="videos.html">Бейнесабақтар</a></li>
               <li><a href="teacher.html">Мұғалімдерге</a></li>
