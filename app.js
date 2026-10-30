@@ -8,6 +8,28 @@ const sb = createClient(
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
+// ---------- Қателерді қазақшаға аудару ----------
+const ERR_KK = [
+  [/failed to fetch|networkerror|network request failed|load failed|fetch failed/i, 'Байланыс қатесі. Интернетті тексеріп, қайталаңыз.'],
+  [/row-level security|permission denied|not authorized|unauthorized|forbidden|not allowed/i, 'Бұл әрекетке рұқсат жоқ.'],
+  [/duplicate key|already exists|resource already exists/i, 'Мұндай жазба бұрыннан бар.'],
+  [/payload too large|exceeded the maximum allowed size|too large|entity too large/i, 'Файл тым үлкен.'],
+  [/mime type|invalid file type|not supported|unsupported/i, 'Бұл файл түріне рұқсат жоқ.'],
+  [/bucket not found|object not found|not found/i, 'Сұралған дерек немесе файл табылмады.'],
+  [/violates foreign key|foreign key/i, 'Бұл жазба басқа деректермен байланысты, өшіруге немесе өзгертуге болмайды.'],
+  [/null value|not-null|violates not-null/i, 'Міндетті өріс толтырылмаған.'],
+  [/invalid input syntax|invalid input|malformed/i, 'Енгізілген мән дұрыс емес.'],
+  [/jwt|session|token|expired/i, 'Сессия мерзімі өтіп кетті. Қайта кіріңіз.'],
+  [/rate limit|too many|429/i, 'Тым жиі сұраныс. Біраз күте тұрып, қайталаңыз.'],
+  [/timeout|timed out|statement timeout/i, 'Күту уақыты өтіп кетті. Қайталап көріңіз.']
+];
+const errKK = e => {
+  const m = String(e?.message || e || '');
+  if (/[а-яәіңғүұқөһ]/i.test(m)) return m;   // қазақша хабар болса, сол күйінде
+  const hit = ERR_KK.find(([re]) => re.test(m));
+  return hit ? hit[1] : 'Күтпеген қате орын алды. Қайталап көріңіз.';
+};
+
 const TYPE_COLORS = {
   'Жер-су атаулары':'#0f766e','Кейіпкерлер':'#8b5cf6','Авторлық сөзқолданыс':'#0dcaf0','Эпитет':'#0d6efd',
   'Метафора':'#198754','Теңеу':'#ffc107','Тұрақты тіркес':'#dc3545','Мақал-мәтелдер':'#6c757d',
@@ -182,7 +204,7 @@ async function search() {
   if (state.types.size) query = query.or([...state.types].map(t => `word_type.ilike."%${t}%"`).join(','));
 
   const { data, error } = await query;
-  if (error) { $('results').innerHTML = `<div class="alert alert-danger">Қате: ${esc(error.message)}</div>`; return; }
+  if (error) { $('results').innerHTML = `<div class="alert alert-danger">Қате: ${esc(errKK(error))}</div>`; return; }
   if (!data.length) { $('results').innerHTML = '<div class="alert alert-warning">Ештеңе табылмады.</div>'; return; }
 
   $('results').innerHTML = `<div class="mb-2 text-muted">Табылды: ${data.length}</div>` + data.map(i => `
