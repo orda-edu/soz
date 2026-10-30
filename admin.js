@@ -7,6 +7,28 @@ const sb = createClient(
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// ---------- Қателерді қазақшаға аудару ----------
+const ERR_KK = [
+  [/failed to fetch|networkerror|network request failed|load failed|fetch failed/i, 'Байланыс қатесі. Интернетті тексеріп, қайталаңыз.'],
+  [/row-level security|permission denied|not authorized|unauthorized|forbidden|not allowed/i, 'Бұл әрекетке рұқсат жоқ.'],
+  [/duplicate key|already exists|resource already exists/i, 'Мұндай жазба бұрыннан бар.'],
+  [/payload too large|exceeded the maximum allowed size|too large|entity too large/i, 'Файл тым үлкен.'],
+  [/mime type|invalid file type|not supported|unsupported/i, 'Бұл файл түріне рұқсат жоқ.'],
+  [/bucket not found|object not found|not found/i, 'Сұралған дерек немесе файл табылмады.'],
+  [/violates foreign key|foreign key/i, 'Бұл жазба басқа деректермен байланысты, өшіруге немесе өзгертуге болмайды.'],
+  [/null value|not-null|violates not-null/i, 'Міндетті өріс толтырылмаған.'],
+  [/invalid input syntax|invalid input|malformed/i, 'Енгізілген мән дұрыс емес.'],
+  [/jwt|session|token|expired/i, 'Сессия мерзімі өтіп кетті. Қайта кіріңіз.'],
+  [/rate limit|too many|429/i, 'Тым жиі сұраныс. Біраз күте тұрып, қайталаңыз.'],
+  [/timeout|timed out|statement timeout/i, 'Күту уақыты өтіп кетті. Қайталап көріңіз.']
+];
+const errKK = e => {
+  const m = String(e?.message || e || '');
+  if (/[а-яәіңғүұқөһ]/i.test(m)) return m;   // қазақша хабар болса, сол күйінде
+  const hit = ERR_KK.find(([re]) => re.test(m));
+  return hit ? hit[1] : 'Күтпеген қате орын алды. Қайталап көріңіз.';
+};
 const TYPES = ['Жер-су атаулары','Кейіпкерлер','Авторлық сөзқолданыс','Эпитет','Метафора','Теңеу','Тұрақты тіркес','Мақал-мәтелдер','Көне сөз','Діни сөз','Кірме сөз','Этномәдени атаулар'];
 const KMZH_EXT = ['pdf', 'doc', 'docx', 'pptx'];
 
@@ -135,7 +157,7 @@ function draw() {
     const bucket = { kmzh: 'kmzh', pictures: 'pictures', authors: 'authors' }[view];
     if (bucket && b.dataset.path) await sb.storage.from(bucket).remove([b.dataset.path]);
     const { error } = await sb.from(cfg.table).delete().eq('id', b.dataset.id);
-    if (error) alert('Қате: ' + error.message); else show(view);
+    if (error) alert('Қате: ' + errKK(error)); else show(view);
   }));
   document.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => openForm(view, null, rows.find(x => x.id === b.dataset.edit))));
   document.querySelectorAll('[data-photo]').forEach(b => b.addEventListener('click', () => { editId = b.dataset.photo; openForm('authorphoto', b.dataset.name); }));
@@ -162,7 +184,7 @@ async function show(v) {
   $('rows').innerHTML = '<div class="p-4 text-muted">Жүктелуде...</div>';
 
   const { data, error } = await sb.from(cfg.table).select('*');
-  if (error) { $('rows').innerHTML = `<div class="p-4 text-danger">Қате: ${esc(error.message)}</div>`; return; }
+  if (error) { $('rows').innerHTML = `<div class="p-4 text-danger">Қате: ${esc(errKK(error))}</div>`; return; }
   rows = data;
   buildFilters();
   draw();
@@ -330,8 +352,8 @@ $('modalForm').addEventListener('submit', async e => {
       if (!/^https?:\/\//i.test(v('f2'))) return msg('Сілтеме http:// немесе https:// деп басталуы керек!', 'text-danger');
       res = await sb.from('videos').insert([{ title: v('f1'), url: v('f2') }]);
     }
-    if (res.error) return msg('❌ ' + res.error.message, 'text-danger');
-  } catch (err) { return msg('❌ ' + err.message, 'text-danger'); }
+    if (res.error) return msg('❌ ' + errKK(res.error), 'text-danger');
+  } catch (err) { return msg('❌ ' + errKK(err), 'text-danger'); }
 
   if (kind === 'words' && !editRow) {
     $('f1').value = ''; $('f2').value = ''; $('fex').value = '';
