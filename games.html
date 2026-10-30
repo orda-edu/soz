@@ -88,6 +88,28 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 const sb = createClient('https://jkvjtjjimqvppvogotiu.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imprdmp0amppbXF2cHB2b2dvdGl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI2ODYzNzAsImV4cCI6MjEwODI2MjM3MH0.Zk-CdKAilLWVjwW8RmvmqRBfOFv9MyrJQxDGDud0qbs');
 const app = document.getElementById('app');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// ---------- Қателерді қазақшаға аудару ----------
+const ERR_KK = [
+  [/failed to fetch|networkerror|network request failed|load failed|fetch failed/i, 'Байланыс қатесі. Интернетті тексеріп, қайталаңыз.'],
+  [/row-level security|permission denied|not authorized|unauthorized|forbidden|not allowed/i, 'Бұл әрекетке рұқсат жоқ.'],
+  [/duplicate key|already exists|resource already exists/i, 'Мұндай жазба бұрыннан бар.'],
+  [/payload too large|exceeded the maximum allowed size|too large|entity too large/i, 'Файл тым үлкен.'],
+  [/mime type|invalid file type|not supported|unsupported/i, 'Бұл файл түріне рұқсат жоқ.'],
+  [/bucket not found|object not found|not found/i, 'Сұралған дерек немесе файл табылмады.'],
+  [/violates foreign key|foreign key/i, 'Бұл жазба басқа деректермен байланысты, өшіруге немесе өзгертуге болмайды.'],
+  [/null value|not-null|violates not-null/i, 'Міндетті өріс толтырылмаған.'],
+  [/invalid input syntax|invalid input|malformed/i, 'Енгізілген мән дұрыс емес.'],
+  [/jwt|session|token|expired/i, 'Сессия мерзімі өтіп кетті. Қайта кіріңіз.'],
+  [/rate limit|too many|429/i, 'Тым жиі сұраныс. Біраз күте тұрып, қайталаңыз.'],
+  [/timeout|timed out|statement timeout/i, 'Күту уақыты өтіп кетті. Қайталап көріңіз.']
+];
+const errKK = e => {
+  const m = String(e?.message || e || '');
+  if (/[а-яәіңғүұқөһ]/i.test(m)) return m;   // қазақша хабар болса, сол күйінде
+  const hit = ERR_KK.find(([re]) => re.test(m));
+  return hit ? hit[1] : 'Күтпеген қате орын алды. Қайталап көріңіз.';
+};
 const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const title = (t, c) => `<h2 class="text-center fw-bold mb-4" style="color:${c || '#1e3a8a'}">${t}</h2>`;
 let cache = null, Q = null, M = null, student = null, cur = null;
@@ -111,7 +133,7 @@ async function saveResult(game, score, total) {
   if (!student) return;
   const { error } = await sb.rpc('save_result', { p_code: student.code, p_game: game, p_score: score, p_total: total });
   const n = document.getElementById('saveNote');
-  if (n) n.textContent = error ? 'Нәтиже сақталмады: ' + error.message : '✅ Нәтиже мұғалімге сақталды';
+  if (n) n.textContent = error ? 'Нәтиже сақталмады: ' + errKK(error) : '✅ Нәтиже мұғалімге сақталды';
 }
 
 // Деректерді бетті ашқанда-ақ алдын ала жүктейміз + localStorage-та сақтаймыз (келесі кіргенде лезде ашылады)
@@ -169,7 +191,7 @@ function home() {
 // ---------- Тест ----------
 async function quizSetup() {
   loading();
-  let ws; try { ws = await getWords(); } catch (e) { app.innerHTML = note('Қате: ' + esc(e.message)); return; }
+  let ws; try { ws = await getWords(); } catch (e) { app.innerHTML = note('Қате: ' + esc(errKK(e))); return; }
   const works = [...new Set(ws.map(w => w.work).filter(Boolean))];
   cur = quizSetup;
   app.innerHTML = title('Тест параметрлері') + sbar() + `<div class="panel p-4 p-md-5" style="max-width:${W}px;margin:auto">
@@ -239,7 +261,7 @@ function quizResult() {
 // ---------- Сәйкестендіру ----------
 async function matchSetup() {
   loading();
-  try { await getWords(); } catch (e) { app.innerHTML = note('Қате: ' + esc(e.message)); return; }
+  try { await getWords(); } catch (e) { app.innerHTML = note('Қате: ' + esc(errKK(e))); return; }
   cur = matchSetup;
   app.innerHTML = title('Сәйкестендіру ойыны', '#198754') + sbar() + `<div class="panel p-4 p-md-5" style="max-width:${W}px;margin:auto">
     <label class="form-label fw-bold">Жұп саны:</label>
@@ -380,7 +402,7 @@ const GAMES = {
 };
 async function gameSetup(k, setup) {
   loading();
-  try { await getWords(); } catch (e) { app.innerHTML = note('Қате: ' + esc(e.message)); return; }
+  try { await getWords(); } catch (e) { app.innerHTML = note('Қате: ' + esc(errKK(e))); return; }
   const g = GAMES[k]; cur = setup;
   app.innerHTML = title(g.t, g.c) + sbar() + `<div class="panel p-4 p-md-5" style="max-width:${W}px;margin:auto">
     <label class="form-label fw-bold">Сұрақ саны:</label>
@@ -477,7 +499,7 @@ function anaResult() {
 let C = null;
 async function cardsStart() {
   loading();
-  try { await getWords(); } catch (e) { app.innerHTML = note('Қате: ' + esc(e.message)); return; }
+  try { await getWords(); } catch (e) { app.innerHTML = note('Қате: ' + esc(errKK(e))); return; }
   if (!cache.length) { app.innerHTML = note('Базада сөздер жоқ.'); return; }
   cur = null; C = { i: 0, flip: false, items: shuffle(cache).slice(0, 30) };
   cardDraw();
