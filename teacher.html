@@ -40,7 +40,7 @@
       <div class="text-center mb-3"><i class="bi bi-envelope-check-fill display-4 text-primary"></i><h4 class="fw-bold mt-2" id="otpTitle">Email растау</h4>
         <div class="small text-muted">Кодты мына поштаға жібердік:<br><b id="otpMail"></b></div></div>
       <form id="otpForm">
-        <input id="otpCode" class="form-control form-control-lg text-center mb-3" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="Код" style="letter-spacing:.4em;font-weight:700" required>
+        <input id="otpCode" class="form-control form-control-lg text-center mb-3" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Код" style="letter-spacing:.4em;font-weight:700" required>
         <div id="otpMsg" class="small mb-3"></div>
         <button class="btn btn-primary w-100 rounded-pill fw-bold mb-2">Растау</button>
         <button type="button" id="otpResend" class="btn btn-outline-primary btn-sm rounded-pill w-100 mb-2">Кодты қайта жіберу</button>
@@ -133,7 +133,26 @@ function startCooldown() {
   tick(); resendTimer = setInterval(tick, 1000);
 }
 const say = (el, cls, t) => { el.className = 'small mb-3 text-' + cls; el.textContent = t; };
-const errText = e => e.status === 429 || /rate/i.test(e.message) ? 'Тым жиі сұраныс. Біраз күте тұрып, қайталаңыз.' : 'Қате: ' + e.message;
+const ERR_KK = [
+  [/new password should be different/i, 'Жаңа құпиясөз ескі құпиясөзден өзгеше болуы керек.'],
+  [/rate limit|too many|429|security purposes|after \d+ seconds/i, 'Тым жиі сұраныс. Біраз күте тұрып, қайталаңыз.'],
+  [/already registered|already been registered|already exists/i, 'Бұл email бұрын тіркелген. «Кіру» бөлімін қолданыңыз.'],
+  [/invalid login credentials/i, 'Email немесе құпиясөз қате.'],
+  [/email not confirmed/i, 'Email әлі расталмаған. Растау кодын алыңыз.'],
+  [/token has expired|otp.*expired|expired/i, 'Код қате немесе мерзімі өтіп кетті. Жаңа код сұраңыз.'],
+  [/invalid.*(token|otp|code)|token.*invalid/i, 'Код қате немесе мерзімі өтіп кетті. Жаңа код сұраңыз.'],
+  [/password should be at least|password is too short|weak password|should contain at least one character/i, 'Құпиясөз талаптарға сәйкес емес (кемінде 8 таңба, бас және кіші әріп, сан).'],
+  [/same password|different from the old/i, 'Жаңа құпиясөз ескісінен өзгеше болуы керек.'],
+  [/unable to validate email|invalid format|invalid email|email address .* is invalid/i, 'Email дұрыс емес.'],
+  [/signups? not allowed|signup is disabled/i, 'Тіркелу уақытша өшірулі.'],
+  [/error sending|smtp|sending .*email/i, 'Хатты жіберу мүмкін болмады. Кейінірек қайталаңыз.'],
+  [/network|failed to fetch|load failed/i, 'Байланыс қатесі. Интернетті тексеріп, қайталаңыз.'],
+  [/jwt|session|not authenticated|auth session missing/i, 'Сессия мерзімі өтіп кетті. Қайта кіріңіз.'],
+  [/row-level security|permission denied|violates/i, 'Бұл әрекетке рұқсат жоқ немесе дерек дұрыс емес.'],
+  [/duplicate key|already exists/i, 'Мұндай жазба бұрыннан бар.']
+];
+const kk = e => { const m = String(e?.message || e || ''); const hit = ERR_KK.find(([re]) => re.test(m) || (e?.status === 429 && /429/.test(re.source))); return hit ? hit[1] : 'Күтпеген қате орын алды. Қайталап көріңіз.'; };
+const errText = e => e?.status === 429 ? 'Тым жиі сұраныс. Біраз күте тұрып, қайталаңыз.' : kk(e);
 
 // ---------- Код арқылы растау (OTP) ----------
 let otp = null;   // { email, type: 'signup' | 'recovery' }
@@ -174,7 +193,7 @@ $('otpForm').addEventListener('submit', async e => {
   const { error } = await sb.auth.verifyOtp({ email: otp.email, token: code, type: otp.type });
   if (error) {
     recovering = false;
-    return say(msg, 'danger', /expired|invalid/i.test(error.message) ? 'Код қате немесе мерзімі өтіп кетті. Жаңа код сұраңыз.' : errText(error));
+    return say(msg, 'danger', errText(error));
   }
   otp = null; clearInterval(otpTimer);
   const { data } = await sb.auth.getSession(); show(data.session?.user);
@@ -225,7 +244,7 @@ $('recForm').addEventListener('submit', async e => {
   if (p !== $('rPass2').value) { msg.className = 'small mb-3 text-danger'; msg.textContent = 'Құпиясөздер сәйкес емес.'; return; }
   msg.className = 'small mb-3 text-primary'; msg.textContent = 'Күте тұрыңыз...';
   const { error } = await sb.auth.updateUser({ password: p });
-  if (error) { msg.className = 'small mb-3 text-danger'; msg.textContent = 'Қате: ' + error.message; return; }
+  if (error) { msg.className = 'small mb-3 text-danger'; msg.textContent = errText(error); return; }
   recovering = false; history.replaceState(null, '', location.pathname);
   $('recBox').classList.add('d-none');
   const { data } = await sb.auth.getSession(); show(data.session?.user);
@@ -250,7 +269,7 @@ $('authForm').addEventListener('submit', async e => {
       : password !== $('aPass2').value ? 'Құпиясөздер сәйкес емес.' : '';
     if (bad) { msg.className = 'small mb-3 text-danger'; msg.textContent = bad; return; }
     const { data, error } = await sb.auth.signUp({ email, password, options: { data: { full_name: $('aName').value.trim(), nickname: nick }, } });
-    if (error) { msg.className = 'small mb-3 text-danger'; msg.textContent = error.message; return; }
+    if (error) { msg.className = 'small mb-3 text-danger'; msg.textContent = errText(error); return; }
     if (!data.session) { msg.textContent = ''; openOtp(email, 'signup'); }
   }
 });
@@ -283,7 +302,7 @@ async function load() {
     sb.from('students').select('*').order('created_at', { ascending: false }),
     sb.from('game_results').select('*, students(full_name, class_name)').order('created_at', { ascending: false })
   ]);
-  if (s.error) { $('stMsg').className = 'small mt-2 text-danger'; $('stMsg').textContent = 'Қате: ' + s.error.message + ' (SQL орнатылғанын тексеріңіз)'; return; }
+  if (s.error) { $('stMsg').className = 'small mt-2 text-danger'; $('stMsg').textContent = errText(s.error) + ' (SQL орнатылғанын тексеріңіз)'; return; }
   students = s.data || []; results = r.data || [];
   const cur = $('fSt').value;
   $('fSt').innerHTML = '<option value="">Барлық оқушы</option>' + students.map(x => `<option value="${x.id}">${esc(x.full_name)}</option>`).join('');
@@ -323,7 +342,7 @@ $('stForm').addEventListener('submit', async e => {
     res = await sb.from('students').insert([{ full_name, class_name, code: gen() }]);
     if (!res.error || res.error.code !== '23505') break; // код қайталанса, қайта әрекет
   }
-  if (res.error) { msg.className = 'small mt-2 text-danger'; msg.textContent = 'Қате: ' + res.error.message; return; }
+  if (res.error) { msg.className = 'small mt-2 text-danger'; msg.textContent = errText(res.error); return; }
   msg.className = 'small mt-2 text-success'; msg.textContent = '✅ Оқушы қосылды. Кодын төмендегі кестеден алыңыз.';
   $('sName').value = ''; $('sClass').value = '';
   load();
@@ -332,7 +351,7 @@ $('stRows').addEventListener('click', async e => {
   const b = e.target.closest('[data-del]'); if (!b) return;
   if (!confirm('Оқушы мен оның барлық нәтижесі өшіріледі. Растайсыз ба?')) return;
   const { error } = await sb.from('students').delete().eq('id', b.dataset.del);
-  if (error) alert('Қате: ' + error.message); else load();
+  if (error) alert(errText(error)); else load();
 });
 </script>
 </body>
